@@ -24,9 +24,9 @@ export function Button({
 	const colorScheme = useColorScheme() ?? "light";
 	const palette = Colors[colorScheme];
 
-	let backgroundColor = palette.primary;
-	let borderColor = palette.primaryBorder;
-	let textColor = palette.onPrimary;
+	let backgroundColor: string = palette.primary;
+	let borderColor: string = palette.primaryBorder;
+	let textColor: string = palette.onPrimary;
 
 	if (variant === "secondary") {
 		backgroundColor = "transparent";

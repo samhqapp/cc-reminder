@@ -1,5 +1,6 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
@@ -7,6 +8,11 @@ import Colors from "@/constants/Colors";
 export default function TabLayout() {
 	const colorScheme = useColorScheme() ?? "light";
 	const palette = Colors[colorScheme];
+	const insets = useSafeAreaInsets();
+
+	// Sit 12px above the system gesture bar (pill nav on Android / home bar on iOS)
+	const navBottom = Math.max(insets.bottom, 8) + 12;
+	const navHeight = 64;
 
 	return (
 		<Tabs
@@ -15,26 +21,28 @@ export default function TabLayout() {
 				tabBarInactiveTintColor: palette.muted,
 				tabBarStyle: {
 					position: "absolute",
-					bottom: 24,
-					left: 24,
-					right: 24,
+					bottom: navBottom,
+					left: 20,
+					right: 20,
 					backgroundColor: palette.card,
 					borderColor: palette.borderSoft,
 					borderWidth: 2,
 					borderBottomWidth: 4,
 					borderRadius: 32,
-					height: 72,
-					paddingTop: 12,
-					paddingBottom: 12,
+					height: navHeight,
+					// Even vertical rhythm: icon + label centred together
+					paddingTop: 10,
+					paddingBottom: 10,
 					shadowColor: palette.border3D,
 					shadowOffset: { width: 0, height: 8 },
 					shadowOpacity: 0.15,
 					shadowRadius: 16,
-					elevation: 8,
+					elevation: 12,
 				},
 				tabBarLabelStyle: {
-					fontSize: 12,
+					fontSize: 11,
 					fontWeight: "800",
+					marginTop: 2,
 				},
 				tabBarIconStyle: {
 					marginBottom: 0,

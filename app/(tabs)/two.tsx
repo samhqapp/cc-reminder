@@ -1,44 +1,43 @@
 import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { NoteSheet } from "@/components/card/NoteSheet";
 import { useColorScheme } from "@/components/useColorScheme";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { Button } from "@/components/ui/Button";
 import Colors from "@/constants/Colors";
-import { radius, shadow, spacing, thickness } from "@/constants/Tokens";
+import { radius, spacing, thickness } from "@/constants/Tokens";
 import { findCompanyPreset } from "@/data/companyPresets";
-import { useCards } from "@/hooks/useCards";
+import { mapCardToDraft, useCards } from "@/hooks/useCards";
 import type { Card, DerivedReminder } from "@/types/domain";
 import { formatFullDate, relativeDayLabel } from "@/utils/date";
-import { deriveReminders, getReminderMetrics } from "@/utils/reminders";
+import { deriveReminders } from "@/utils/reminders";
 
 export default function RemindersScreen() {
 	const colorScheme = useColorScheme() ?? "light";
 	const palette = Colors[colorScheme];
-	const { width } = useWindowDimensions();
+	const insets = useSafeAreaInsets();
 	const {
 		cards,
 		acknowledgeReminder,
 		settleCycle,
 		snoozeReminder,
+		updateCard,
 	} = useCards();
 	const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
 	const reminders = useMemo(() => deriveReminders(cards), [cards]);
-	const metrics = useMemo(
-		() => getReminderMetrics(cards, reminders),
-		[cards, reminders],
-	);
-	
-	// Max width constraint applied in root layout is 480, so tile calculations 
-	// should be based on actual container width, but we can assume max 480.
-	const containerWidth = Math.min(width, 480);
-	const twoColumn = containerWidth >= 390;
-	const tileWidth = twoColumn
-		? (containerWidth - spacing.xl * 2 - spacing.md) / 2
-		: containerWidth - spacing.xl * 2;
+
+	// Extra bottom padding so content clears the floating navbar
+	const listPaddingBottom = Math.max(insets.bottom, 8) + 12 + 64 + 24;
+
+	async function handleToggleIntent(card: Card) {
+		const nextIntent = card.intent === "cancel" ? "continue" : "cancel";
+		// Build a full draft from the existing card and flip just the intent
+		const draft = { ...mapCardToDraft(card), intent: nextIntent as "cancel" | "continue" };
+		await updateCard(card.id, draft);
+	}
 
 	return (
 		<SafeAreaView
@@ -47,10 +46,10 @@ export default function RemindersScreen() {
 		>
 			<ScrollView
 				style={{ backgroundColor: palette.background }}
-				contentContainerStyle={styles.content}
+				contentContainerStyle={[styles.content, { paddingBottom: listPaddingBottom }]}
 				showsVerticalScrollIndicator={false}
 			>
-				<Text style={[styles.pageTitle, { color: palette.text }]}>Decision board</Text>
+				<Text style={[styles.pageTitle, { color: palette.text }]}>Reminders</Text>
 
 				{reminders.length === 0 ? (
 					<View
@@ -63,12 +62,12 @@ export default function RemindersScreen() {
 							Nothing to act on
 						</Text>
 						<Text style={[styles.emptyBody, { color: palette.muted }]}>
-							Your reminder bento grid will fill up as renewal dates get closer.
+							Your reminders will appear here as renewal dates get closer.
 						</Text>
 					</View>
 				) : null}
 
-				<View style={styles.grid}>
+				<View style={styles.list}>
 					{reminders.map((reminder) => {
 						const card = cards.find((item) => item.id === reminder.cardId);
 						const companyTheme = findCompanyPreset(
@@ -77,10 +76,12 @@ export default function RemindersScreen() {
 						);
 
 						return (
-							<ReminderTile
+							<ReminderCard
 								key={reminder.id}
 								reminder={reminder}
-								width={tileWidth}
+								card={card ?? null}
+								palette={palette}
+								companySurface={companyTheme?.surface ?? palette.card}
 								onOpenNote={() => setSelectedCard(card ?? null)}
 								onAcknowledge={() =>
 									void acknowledgeReminder(reminder.cardId, reminder.id)
@@ -91,8 +92,9 @@ export default function RemindersScreen() {
 								onHandle={() =>
 									void settleCycle(reminder.cardId, reminder.cycleId)
 								}
-								companySurface={companyTheme?.surface ?? palette.card}
-								palette={palette}
+								onToggleIntent={() =>
+									card ? void handleToggleIntent(card) : undefined
+								}
 							/>
 						);
 					})}
@@ -110,24 +112,28 @@ export default function RemindersScreen() {
 	);
 }
 
-function ReminderTile({
+// ─── Reminder Card ───────────────────────────────────────────────────────────
+
+function ReminderCard({
 	reminder,
-	width,
+	card,
+	palette,
+	companySurface,
 	onOpenNote,
 	onAcknowledge,
 	onSnooze,
 	onHandle,
-	companySurface,
-	palette,
+	onToggleIntent,
 }: {
 	reminder: DerivedReminder;
-	width: number;
+	card: Card | null;
+	palette: (typeof Colors)["light"] | (typeof Colors)["dark"];
+	companySurface: string;
 	onOpenNote: () => void;
 	onAcknowledge: () => void;
 	onSnooze: () => void;
 	onHandle: () => void;
-	companySurface: string;
-	palette: (typeof Colors)["light"] | (typeof Colors)["dark"];
+	onToggleIntent: () => void;
 }) {
 	const toneColor =
 		reminder.tone === "danger"
@@ -138,53 +144,102 @@ function ReminderTile({
 					? palette.success
 					: palette.primary;
 
+	const intentIsCancelable = reminder.intent === "cancel";
+
 	return (
 		<PressableScale
 			onLongPress={onOpenNote}
 			contentStyle={[
-				styles.tile,
+				styles.card,
 				{
-					width,
 					backgroundColor: companySurface,
 					borderColor: palette.border,
 					borderBottomColor: palette.border3D,
 				},
 			]}
 		>
-			<View style={styles.tileHeader}>
-				<Text style={[styles.badge, { color: toneColor }]}>
-					{reminder.intent === "cancel" ? "Cancel" : "Keep"}
+			{/* Header row: tone badge + date */}
+			<View style={styles.cardHeader}>
+				<View style={[styles.toneDot, { backgroundColor: toneColor }]} />
+				<Text style={[styles.toneLabel, { color: toneColor }]}>
+					{reminder.stage === "overdue"
+						? "Overdue"
+						: reminder.stage === "due-today"
+							? "Due today"
+							: "Upcoming"}
 				</Text>
-				<Text style={[styles.badgeMuted, { color: palette.muted }]}>
+				<Text style={[styles.dateLabel, { color: palette.muted }]}>
 					{relativeDayLabel(reminder.dueDate)}
 				</Text>
 			</View>
-			<Text style={[styles.tileTitle, { color: palette.text }]}>
-				{reminder.title}
-			</Text>
-			<Text style={[styles.tileMeta, { color: palette.muted }]}>
-				{formatFullDate(reminder.dueDate)}
-			</Text>
-			<Text style={[styles.tileBody, { color: palette.text }]}>
-				{reminder.subtitle}
-			</Text>
-			<View style={styles.tileActions}>
-				<Button 
-					title="Handled" 
-					variant={reminder.tone === "danger" ? "danger" : "success"}
-					style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 8 }}
-					onPress={onHandle} 
+
+			{/* Title + meta */}
+			<View>
+				<Text style={[styles.cardTitle, { color: palette.text }]}>
+					{reminder.title}
+				</Text>
+				<Text style={[styles.cardMeta, { color: palette.muted }]}>
+					{formatFullDate(reminder.dueDate)}
+				</Text>
+			</View>
+
+			{reminder.subtitle ? (
+				<Text style={[styles.cardBody, { color: palette.text }]}>
+					{reminder.subtitle}
+				</Text>
+			) : null}
+
+			{/* Intent toggle — subscription-style pill */}
+			<View style={[styles.intentRow, { backgroundColor: palette.cardAlt }]}>
+				{(["cancel", "continue"] as const).map((opt) => {
+					const active = (card?.intent ?? reminder.intent) === opt;
+					return (
+						<PressableScale
+							key={opt}
+							onPress={onToggleIntent}
+							contentStyle={[
+								styles.intentButton,
+								active
+									? {
+											backgroundColor:
+												opt === "cancel" ? palette.danger : palette.success,
+										}
+									: null,
+							]}
+						>
+							<Text
+								style={[
+									styles.intentLabel,
+									{ color: active ? palette.onPrimary : palette.muted },
+								]}
+							>
+								{opt === "cancel" ? "Cancel" : "Keep"}
+							</Text>
+						</PressableScale>
+					);
+				})}
+			</View>
+
+			{/* Action buttons */}
+			<View style={styles.actions}>
+				<Button
+					title="Handled"
+					variant={intentIsCancelable ? "danger" : "success"}
+					style={{ flex: 1 }}
+					onPress={onHandle}
 				/>
-				<Button 
-					title="Snooze" 
+				<Button
+					title="Snooze"
 					variant="secondary"
-					style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 8 }}
-					onPress={onSnooze} 
+					style={{ flex: 1 }}
+					onPress={onSnooze}
 				/>
 			</View>
 		</PressableScale>
 	);
 }
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
 	safeArea: {
@@ -192,8 +247,7 @@ const styles = StyleSheet.create({
 	},
 	content: {
 		padding: spacing.xl,
-		paddingBottom: 128,
-		gap: spacing.xl,
+		gap: spacing.lg,
 	},
 	pageTitle: {
 		fontFamily: "Nunito_900Black",
@@ -215,51 +269,69 @@ const styles = StyleSheet.create({
 		fontFamily: "Nunito_700Bold",
 		fontSize: 16,
 	},
-	grid: {
-		flexDirection: "row",
-		flexWrap: "wrap",
-		gap: spacing.md,
+	list: {
+		gap: spacing.lg,
 	},
-	tile: {
+	card: {
 		borderWidth: thickness.border,
 		borderBottomWidth: thickness.border3D,
 		borderRadius: radius.xl,
-		padding: spacing.lg,
+		padding: spacing.xl,
+		gap: spacing.md,
+	},
+	cardHeader: {
+		flexDirection: "row",
+		alignItems: "center",
 		gap: spacing.sm,
 	},
-	tileHeader: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		marginBottom: spacing.xs,
+	toneDot: {
+		width: 8,
+		height: 8,
+		borderRadius: 4,
 	},
-	badge: {
+	toneLabel: {
 		fontFamily: "Nunito_900Black",
-		fontSize: 14,
+		fontSize: 13,
 		textTransform: "uppercase",
+		flex: 1,
 	},
-	badgeMuted: {
+	dateLabel: {
 		fontFamily: "Nunito_700Bold",
-		fontSize: 14,
+		fontSize: 13,
 	},
-	tileTitle: {
+	cardTitle: {
 		fontFamily: "Nunito_800ExtraBold",
 		fontSize: 20,
-		marginBottom: -2,
+		marginBottom: 2,
 	},
-	tileMeta: {
-		fontFamily: "Nunito_700Bold",
+	cardMeta: {
+		fontFamily: "Nunito_600SemiBold",
 		fontSize: 14,
 	},
-	tileBody: {
+	cardBody: {
 		fontFamily: "Nunito_600SemiBold",
 		fontSize: 15,
-		marginVertical: spacing.xs,
+		lineHeight: 22,
 	},
-	tileActions: {
+	intentRow: {
 		flexDirection: "row",
-		flexWrap: "wrap",
+		borderRadius: radius.lg,
+		padding: 4,
+		gap: 4,
+	},
+	intentButton: {
+		flex: 1,
+		borderRadius: radius.md,
+		paddingVertical: 10,
+		alignItems: "center",
+	},
+	intentLabel: {
+		fontFamily: "Nunito_900Black",
+		fontSize: 13,
+		textTransform: "uppercase",
+	},
+	actions: {
+		flexDirection: "row",
 		gap: spacing.sm,
-		marginTop: spacing.xs,
 	},
 });

@@ -1,7 +1,10 @@
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import { Button } from "@/components/ui/Button";
+import { TextField } from "@/components/ui/TextField";
 import Colors from "@/constants/Colors";
 import { radius, spacing } from "@/constants/Tokens";
 
@@ -11,6 +14,8 @@ type Props = {
 	subtitle?: string;
 	note?: string;
 	onClose: () => void;
+	/** When provided the sheet becomes editable with a Save button. */
+	onSave?: (note: string) => Promise<void> | void;
 };
 
 export function NoteSheet({
@@ -19,9 +24,29 @@ export function NoteSheet({
 	subtitle,
 	note,
 	onClose,
+	onSave,
 }: Props) {
 	const colorScheme = useColorScheme() ?? "light";
 	const palette = Colors[colorScheme];
+	const [draft, setDraft] = useState(note ?? "");
+	const [isSaving, setIsSaving] = useState(false);
+
+	// Sync draft whenever the sheet opens with new content
+	useEffect(() => {
+		if (visible) {
+			setDraft(note ?? "");
+			setIsSaving(false);
+		}
+	}, [visible, note]);
+
+	async function handleSave() {
+		if (!onSave) return;
+		setIsSaving(true);
+		await onSave(draft);
+		setIsSaving(false);
+	}
+
+	const isEditable = Boolean(onSave);
 
 	return (
 		<BottomSheet
@@ -29,28 +54,49 @@ export function NoteSheet({
 			title={title}
 			subtitle={subtitle}
 			onClose={onClose}
+			footer={
+				isEditable ? (
+					<Button
+						title={isSaving ? "Saving..." : "Save note"}
+						onPress={() => void handleSave()}
+						disabled={isSaving}
+					/>
+				) : undefined
+			}
 		>
-			<View
-				style={[
-					styles.card,
-					{ backgroundColor: palette.cardAlt, borderColor: palette.borderSoft },
-				]}
-			>
-				<Text style={[styles.note, { color: palette.text }]}>
-					{note?.trim() || "No note saved for this card yet."}
-				</Text>
-			</View>
+			{isEditable ? (
+				<TextField
+					label="Note"
+					value={draft}
+					onChangeText={setDraft}
+					placeholder="Cancellation link, support number, follow-up context..."
+					multiline
+					minHeight={120}
+					autoFocus
+				/>
+			) : (
+				<View
+					style={[
+						styles.readCard,
+						{ backgroundColor: palette.cardAlt, borderColor: palette.borderSoft },
+					]}
+				>
+					<Text style={[styles.noteText, { color: palette.text }]}>
+						{note?.trim() || "No note saved for this card yet."}
+					</Text>
+				</View>
+			)}
 		</BottomSheet>
 	);
 }
 
 const styles = StyleSheet.create({
-	card: {
+	readCard: {
 		borderWidth: 1,
 		borderRadius: radius.lg,
 		padding: spacing.lg,
 	},
-	note: {
+	noteText: {
 		fontSize: 15,
 		lineHeight: 22,
 		fontWeight: "600",

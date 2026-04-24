@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AddCardSheet } from "@/components/card/AddCardSheet";
 import { NoteSheet } from "@/components/card/NoteSheet";
@@ -18,11 +18,13 @@ import { formatFullDate, getNextOccurrence, relativeDayLabel } from "@/utils/dat
 export default function CardsScreen() {
 	const colorScheme = useColorScheme() ?? "light";
 	const palette = Colors[colorScheme];
+	const insets = useSafeAreaInsets();
 	const { cards, createCard, defaultDraft } = useCards();
 	const [isAddOpen, setIsAddOpen] = useState(false);
 	const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
 	const starterDraft = useMemo(() => defaultDraft(), [defaultDraft]);
+	const fabBottom = Math.max(insets.bottom, 8) + 12 + 64 + 16;
 
 	return (
 		<SafeAreaView
@@ -129,7 +131,7 @@ export default function CardsScreen() {
 				</View>
 			</ScrollView>
 
-			<View style={styles.fabWrap}>
+			<View style={[styles.fabWrap, { bottom: fabBottom }]}>
 				<FloatingAddButton onPress={() => setIsAddOpen(true)} />
 			</View>
 
@@ -239,7 +241,6 @@ const styles = StyleSheet.create({
 	},
 	fabWrap: {
 		position: "absolute",
-		left: spacing.xl,
-		bottom: 110,
+		right: spacing.xl,
 	},
 });

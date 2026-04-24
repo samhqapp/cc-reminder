@@ -160,42 +160,6 @@ export function AddCardSheet({
 					placeholder="Streaming"
 					hint="Optional section label for the cards list."
 				/>
-				<View style={styles.segmentWrap}>
-					<Text style={[styles.segmentTitle, { color: palette.text }]}>Intent</Text>
-					<View style={[styles.segmentRow, { backgroundColor: palette.cardAlt }]}>
-						{(["cancel", "continue"] as const).map((intent) => {
-							const active = draft.intent === intent;
-							return (
-								<PressableScale
-									key={intent}
-									onPress={() => update({ intent })}
-									contentStyle={[
-										styles.segmentButton,
-										active
-											? {
-													backgroundColor:
-														intent === "cancel"
-															? palette.primary
-															: palette.success,
-												}
-											: null,
-									]}
-								>
-									<Text
-										style={[
-											styles.segmentLabel,
-											{
-												color: active ? palette.onPrimary : palette.muted,
-											},
-										]}
-									>
-										{intent === "cancel" ? "Cancel" : "Continue"}
-									</Text>
-								</PressableScale>
-							);
-						})}
-					</View>
-				</View>
 				<TextField
 					label="Note"
 					value={draft.note}
@@ -244,32 +208,6 @@ const styles = StyleSheet.create({
 		fontFamily: "Nunito_800ExtraBold",
 		fontSize: 14,
 		lineHeight: 18,
-	},
-	segmentWrap: {
-		gap: 6,
-	},
-	segmentTitle: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 14,
-		lineHeight: 18,
-	},
-	segmentRow: {
-		flexDirection: "row",
-		borderRadius: radius.lg,
-		padding: 4,
-		gap: 4,
-	},
-	segmentButton: {
-		flex: 1,
-		borderRadius: radius.md,
-		paddingVertical: 12,
-		alignItems: "center",
-	},
-	segmentLabel: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 14,
-		lineHeight: 18,
-		textTransform: "uppercase",
 	},
 	error: {
 		fontFamily: "Nunito_700Bold",
