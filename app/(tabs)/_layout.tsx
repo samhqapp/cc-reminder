@@ -1,6 +1,6 @@
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Tabs } from "expo-router";
 
-import { useClientOnlyValue } from "@/components/useClientOnlyValue";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
 
@@ -11,18 +11,33 @@ export default function TabLayout() {
 	return (
 		<Tabs
 			screenOptions={{
-				tabBarActiveTintColor: palette.text,
+				tabBarActiveTintColor: palette.primary,
 				tabBarInactiveTintColor: palette.muted,
 				tabBarStyle: {
+					position: "absolute",
+					bottom: 24,
+					left: 24,
+					right: 24,
 					backgroundColor: palette.card,
-					borderTopColor: palette.border,
-					borderTopWidth: 2,
-					height: 68,
+					borderColor: palette.borderSoft,
+					borderWidth: 2,
+					borderBottomWidth: 4,
+					borderRadius: 32,
+					height: 72,
+					paddingTop: 12,
+					paddingBottom: 12,
+					shadowColor: palette.border3D,
+					shadowOffset: { width: 0, height: 8 },
+					shadowOpacity: 0.15,
+					shadowRadius: 16,
+					elevation: 8,
 				},
 				tabBarLabelStyle: {
-					fontFamily: "SpaceMono",
-					fontSize: 11,
-					textTransform: "uppercase",
+					fontSize: 12,
+					fontWeight: "800",
+				},
+				tabBarIconStyle: {
+					marginBottom: 0,
 				},
 				headerStyle: {
 					backgroundColor: palette.background,
@@ -34,12 +49,36 @@ export default function TabLayout() {
 					textTransform: "uppercase",
 					color: palette.text,
 				},
-				headerShown: useClientOnlyValue(false, true),
+				headerShown: false,
 			}}
 		>
-			<Tabs.Screen name="index" options={{ title: "Reminders" }} />
-			<Tabs.Screen name="two" options={{ title: "Cards" }} />
-			<Tabs.Screen name="notes" options={{ title: "Notes" }} />
+			<Tabs.Screen
+				name="index"
+				options={{
+					title: "Cards",
+					tabBarIcon: ({ color, size }) => (
+						<FontAwesome name="credit-card" size={size} color={color} />
+					),
+				}}
+			/>
+			<Tabs.Screen
+				name="two"
+				options={{
+					title: "Reminders",
+					tabBarIcon: ({ color, size }) => (
+						<FontAwesome name="bell" size={size} color={color} />
+					),
+				}}
+			/>
+			<Tabs.Screen
+				name="notes"
+				options={{
+					title: "Notes",
+					tabBarIcon: ({ color, size }) => (
+						<FontAwesome name="sticky-note" size={size} color={color} />
+					),
+				}}
+			/>
 		</Tabs>
 	);
 }

@@ -34,7 +34,8 @@ const styles = StyleSheet.create({
 		alignSelf: "stretch",
 	},
 	pressed: {
-		opacity: 0.8,
+		transform: [{ translateY: 2 }, { scale: 0.98 }],
+		opacity: 0.9,
 	},
 	disabled: {
 		opacity: 0.5,

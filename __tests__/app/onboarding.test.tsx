@@ -21,7 +21,7 @@ describe("OnboardingScreen", () => {
 		const { router } = jest.requireMock("expo-router");
 
 		expect(screen.getByText("CC Reminder")).toBeOnTheScreen();
-		expect(screen.getByText("1. Card data stays on-device.")).toBeOnTheScreen();
+		expect(screen.getByText("Card data stays on-device.")).toBeOnTheScreen();
 
 		fireEvent.press(screen.getByText("Continue"));
 

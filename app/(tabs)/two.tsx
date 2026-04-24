@@ -1,234 +1,329 @@
-import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { PressableScale } from "@/components/ui/PressableScale";
-import { TextField } from "@/components/ui/TextField";
+import { NoteSheet } from "@/components/card/NoteSheet";
 import { useColorScheme } from "@/components/useColorScheme";
+import { PressableScale } from "@/components/ui/PressableScale";
 import Colors from "@/constants/Colors";
-import { radius, spacing } from "@/constants/Tokens";
+import { radius, shadow, spacing, thickness } from "@/constants/Tokens";
+import { findCompanyPreset } from "@/data/companyPresets";
 import { useCards } from "@/hooks/useCards";
-import { formatFullDate, getNextOccurrence } from "@/utils/date";
-import { deriveReminders } from "@/utils/reminders";
+import type { Card, DerivedReminder } from "@/types/domain";
+import { formatFullDate, relativeDayLabel } from "@/utils/date";
+import { deriveReminders, getReminderMetrics } from "@/utils/reminders";
 
-export default function CardsScreen() {
+export default function RemindersScreen() {
 	const colorScheme = useColorScheme() ?? "light";
 	const palette = Colors[colorScheme];
-	const { cards, tagPool } = useCards();
-	const [search, setSearch] = useState("");
-	const [selectedTag, setSelectedTag] = useState<string | null>(null);
+	const { width } = useWindowDimensions();
+	const {
+		cards,
+		acknowledgeReminder,
+		settleCycle,
+		snoozeReminder,
+	} = useCards();
+	const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
-	const filteredCards = useMemo(() => {
-		const searchTerm = search.trim().toLowerCase();
-
-		return [...cards]
-			.filter((card) => {
-				const matchesSearch =
-					!searchTerm ||
-					[card.name, card.provider, card.last4, ...card.tags]
-						.join(" ")
-						.toLowerCase()
-						.includes(searchTerm);
-				const matchesTag = !selectedTag || card.tags.includes(selectedTag);
-				return matchesSearch && matchesTag;
-			})
-			.sort((left, right) => {
-				const leftDue = getNextOccurrence(left.dueDay).getTime();
-				const rightDue = getNextOccurrence(right.dueDay).getTime();
-				if (leftDue !== rightDue) {
-					return leftDue - rightDue;
-				}
-				return left.name.localeCompare(right.name);
-			});
-	}, [cards, search, selectedTag]);
+	const reminders = useMemo(() => deriveReminders(cards), [cards]);
+	const metrics = useMemo(
+		() => getReminderMetrics(cards, reminders),
+		[cards, reminders],
+	);
+	const twoColumn = width >= 390;
+	const tileWidth = twoColumn
+		? (width - spacing.lg * 2 - spacing.sm) / 2
+		: width - spacing.lg * 2;
 
 	return (
-		<ScrollView
-			style={{ backgroundColor: palette.background }}
-			contentContainerStyle={styles.content}
+		<SafeAreaView
+			edges={["top"]}
+			style={[styles.safeArea, { backgroundColor: palette.background }]}
 		>
-			<View
-				style={[
-					styles.section,
-					{ backgroundColor: palette.card, borderColor: palette.border },
-				]}
+			<ScrollView
+				style={{ backgroundColor: palette.background }}
+				contentContainerStyle={styles.content}
+				showsVerticalScrollIndicator={false}
 			>
-				<Text style={[styles.heading, { color: palette.text }]}>Cards</Text>
-				<Text style={[styles.helper, { color: palette.muted }]}>
-					Sorted by nearest due date first. Search works across card name,
-					provider, last 4, and tags.
-				</Text>
-			</View>
-
-			<TextField
-				label="Search cards"
-				value={search}
-				onChangeText={setSearch}
-				placeholder="Search by card name, provider, last 4, or tag"
-			/>
-
-			{tagPool.length > 0 ? (
-				<View style={styles.tagRow}>
-					<PressableScale
-						onPress={() => setSelectedTag(null)}
-						contentStyle={[
-							styles.tagButton,
-							{ backgroundColor: palette.cardAlt, borderColor: palette.border },
-						]}
-					>
-						<Text style={[styles.tagLabel, { color: palette.text }]}>
-							All tags
-						</Text>
-					</PressableScale>
-					{tagPool.map((tag) => (
-						<PressableScale
-							key={tag}
-							onPress={() => setSelectedTag(tag === selectedTag ? null : tag)}
-							contentStyle={[
-								styles.tagButton,
-								{
-									backgroundColor: palette.cardAlt,
-									borderColor: palette.border,
-								},
-							]}
-						>
-							<Text style={[styles.tagLabel, { color: palette.text }]}>
-								{tag}
-							</Text>
-						</PressableScale>
-					))}
-				</View>
-			) : null}
-
-			<PressableScale
-				onPress={() => router.push("/card/new" as never)}
-				contentStyle={[
-					styles.button,
-					{ backgroundColor: palette.cardAlt, borderColor: palette.border },
-				]}
-			>
-				<Text style={[styles.buttonLabel, { color: palette.text }]}>
-					Add card
-				</Text>
-			</PressableScale>
-
-			{filteredCards.length === 0 ? (
 				<View
 					style={[
-						styles.section,
-						{ backgroundColor: palette.card, borderColor: palette.border },
+						styles.hero,
+						{
+							backgroundColor: palette.card,
+							borderColor: palette.borderSoft,
+							shadowColor: palette.primary,
+						},
+						shadow.soft,
 					]}
 				>
-					<Text style={[styles.title, { color: palette.text }]}>
-						No cards found
+					<Text style={[styles.eyebrow, { color: palette.primary }]}>
+						Reminders
 					</Text>
-					<Text style={[styles.helper, { color: palette.muted }]}>
-						Create a card or change the current search and tag filter.
+					<Text style={[styles.title, { color: palette.text }]}>
+						Decision board
+					</Text>
+					<Text style={[styles.subtitle, { color: palette.muted }]}>
+						{metrics.activeCount} active · {metrics.cardCount} cards ·{" "}
+						{metrics.overdueCount} overdue
 					</Text>
 				</View>
-			) : null}
 
-			{filteredCards.map((card) => {
-				const reminders = deriveReminders([card]);
-				const nextReminder = reminders[0];
-
-				return (
-					<PressableScale
-						key={card.id}
-						onPress={() => router.push(`/card/${card.id}` as never)}
-						contentStyle={[
-							styles.section,
-							{ backgroundColor: palette.card, borderColor: palette.border },
+				{reminders.length === 0 ? (
+					<View
+						style={[
+							styles.emptyCard,
+							{ backgroundColor: palette.card, borderColor: palette.borderSoft },
 						]}
 					>
-						<Text style={[styles.title, { color: palette.text }]}>
-							{card.name}
+						<Text style={[styles.emptyTitle, { color: palette.text }]}>
+							Nothing to act on
 						</Text>
-						<Text style={[styles.meta, { color: palette.text }]}>
-							{card.provider} · last 4 {card.last4}
+						<Text style={[styles.emptyBody, { color: palette.muted }]}>
+							Your reminder bento grid will fill up as renewal dates get closer.
 						</Text>
-						<Text style={[styles.meta, { color: palette.text }]}>
-							Due day {card.dueDay}
-							{card.billingDay ? ` · Billing day ${card.billingDay}` : ""}
-						</Text>
-						<Text style={[styles.helper, { color: palette.muted }]}>
-							Notifications: {card.notificationsEnabled ? "on" : "off"}
-						</Text>
-						<Text style={[styles.helper, { color: palette.muted }]}>
-							{nextReminder
-								? `Next reminder: ${nextReminder.title} · ${formatFullDate(nextReminder.scheduledFor)}`
-								: "No active reminders right now."}
-						</Text>
-						{card.tags.length > 0 ? (
-							<Text style={[styles.helper, { color: palette.muted }]}>
-								Tags: {card.tags.join(", ")}
-							</Text>
-						) : null}
-					</PressableScale>
-				);
-			})}
-		</ScrollView>
+					</View>
+				) : null}
+
+				<View style={styles.grid}>
+					{reminders.map((reminder) => {
+						const card = cards.find((item) => item.id === reminder.cardId);
+						const companyTheme = findCompanyPreset(
+							reminder.provider,
+							reminder.companyKey,
+						);
+
+						return (
+							<ReminderTile
+								key={reminder.id}
+								reminder={reminder}
+								width={tileWidth}
+								onOpenNote={() => setSelectedCard(card ?? null)}
+								onAcknowledge={() =>
+									void acknowledgeReminder(reminder.cardId, reminder.id)
+								}
+								onSnooze={() =>
+									void snoozeReminder(reminder.cardId, reminder.id, 12)
+								}
+								onHandle={() =>
+									void settleCycle(reminder.cardId, reminder.cycleId)
+								}
+								companySurface={companyTheme?.surface ?? palette.card}
+								palette={palette}
+							/>
+						);
+					})}
+				</View>
+			</ScrollView>
+
+			<NoteSheet
+				visible={Boolean(selectedCard)}
+				title={selectedCard?.name ?? "Card note"}
+				subtitle={selectedCard?.provider}
+				note={selectedCard?.note}
+				onClose={() => setSelectedCard(null)}
+			/>
+		</SafeAreaView>
+	);
+}
+
+function ReminderTile({
+	reminder,
+	width,
+	onOpenNote,
+	onAcknowledge,
+	onSnooze,
+	onHandle,
+	companySurface,
+	palette,
+}: {
+	reminder: DerivedReminder;
+	width: number;
+	onOpenNote: () => void;
+	onAcknowledge: () => void;
+	onSnooze: () => void;
+	onHandle: () => void;
+	companySurface: string;
+	palette: (typeof Colors)["light"] | (typeof Colors)["dark"];
+}) {
+	const toneColor =
+		reminder.tone === "danger"
+			? palette.danger
+			: reminder.tone === "warning"
+				? palette.warning
+				: reminder.tone === "success"
+					? palette.success
+					: palette.primary;
+
+	return (
+		<PressableScale
+			onLongPress={onOpenNote}
+			contentStyle={[
+				styles.tile,
+				{
+					width,
+					backgroundColor: companySurface,
+					borderColor: palette.borderSoft,
+					shadowColor: toneColor,
+				},
+				shadow.soft,
+			]}
+		>
+			<View style={styles.tileHeader}>
+				<Text style={[styles.badge, { color: toneColor }]}>
+					{reminder.intent === "cancel" ? "Cancel" : "Continue"}
+				</Text>
+				<Text style={[styles.badgeMuted, { color: palette.muted }]}>
+					{relativeDayLabel(reminder.dueDate)}
+				</Text>
+			</View>
+			<Text style={[styles.tileTitle, { color: palette.text }]}>
+				{reminder.title}
+			</Text>
+			<Text style={[styles.tileMeta, { color: palette.muted }]}>
+				{formatFullDate(reminder.dueDate)}
+			</Text>
+			<Text style={[styles.tileBody, { color: palette.muted }]}>
+				{reminder.subtitle}
+			</Text>
+			<View style={styles.tileActions}>
+				<PressableScale
+					onPress={onAcknowledge}
+					contentStyle={[
+						styles.smallButton,
+						{ backgroundColor: palette.card, borderColor: palette.borderSoft },
+					]}
+				>
+					<Text style={[styles.smallLabel, { color: palette.text }]}>Seen</Text>
+				</PressableScale>
+				<PressableScale
+					onPress={onSnooze}
+					contentStyle={[
+						styles.smallButton,
+						{ backgroundColor: palette.card, borderColor: palette.borderSoft },
+					]}
+				>
+					<Text style={[styles.smallLabel, { color: palette.text }]}>Snooze</Text>
+				</PressableScale>
+				<PressableScale
+					onPress={onHandle}
+					contentStyle={[
+						styles.smallButton,
+						{ backgroundColor: palette.primary, borderColor: palette.primary },
+					]}
+				>
+					<Text style={[styles.smallLabel, { color: palette.onPrimary }]}>
+						Handled
+					</Text>
+				</PressableScale>
+			</View>
+		</PressableScale>
 	);
 }
 
 const styles = StyleSheet.create({
+	safeArea: {
+		flex: 1,
+	},
 	content: {
 		padding: spacing.lg,
-		gap: spacing.md,
+		gap: spacing.lg,
 	},
-	section: {
-		borderWidth: 2,
-		borderRadius: radius.sm,
-		padding: spacing.md,
-		gap: 8,
+	hero: {
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3D,
+		borderRadius: radius.xl,
+		padding: spacing.xl,
+		gap: spacing.xs,
 	},
-	heading: {
-		fontFamily: "SpaceMono",
-		fontSize: 20,
-		lineHeight: 28,
+	eyebrow: {
+		fontSize: 13,
+		lineHeight: 18,
+		fontWeight: "800",
 		textTransform: "uppercase",
 	},
 	title: {
-		fontFamily: "SpaceMono",
-		fontSize: 16,
-		lineHeight: 24,
+		fontSize: 30,
+		lineHeight: 36,
+		fontWeight: "900",
+	},
+	subtitle: {
+		fontSize: 15,
+		lineHeight: 22,
+	},
+	emptyCard: {
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3D,
+		borderRadius: radius.lg,
+		padding: spacing.lg,
+		gap: spacing.xs,
+	},
+	emptyTitle: {
+		fontSize: 20,
+		lineHeight: 26,
+		fontWeight: "800",
+	},
+	emptyBody: {
+		fontSize: 14,
+		lineHeight: 20,
+	},
+	grid: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		gap: spacing.sm,
+	},
+	tile: {
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3D,
+		borderRadius: radius.lg,
+		padding: spacing.md,
+		gap: spacing.sm,
+	},
+	tileHeader: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+	},
+	badge: {
+		fontSize: 12,
+		lineHeight: 16,
+		fontWeight: "800",
 		textTransform: "uppercase",
 	},
-	meta: {
-		fontFamily: "SpaceMono",
+	badgeMuted: {
+		fontSize: 12,
+		lineHeight: 16,
+		fontWeight: "700",
+	},
+	tileTitle: {
+		fontSize: 18,
+		lineHeight: 22,
+		fontWeight: "800",
+	},
+	tileMeta: {
+		fontSize: 12,
+		lineHeight: 16,
+		fontWeight: "700",
+	},
+	tileBody: {
 		fontSize: 13,
-		lineHeight: 20,
+		lineHeight: 18,
 	},
-	helper: {
-		fontFamily: "SpaceMono",
-		fontSize: 13,
-		lineHeight: 20,
+	tileActions: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		gap: spacing.xs,
 	},
-	tagRow: {
-		gap: 8,
-	},
-	tagButton: {
-		borderWidth: 2,
-		borderRadius: radius.sm,
+	smallButton: {
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3DSmall,
+		borderRadius: 999,
+		paddingHorizontal: 12,
 		paddingVertical: 10,
-		paddingHorizontal: 12,
 	},
-	tagLabel: {
-		fontFamily: "SpaceMono",
-		fontSize: 13,
-		lineHeight: 18,
-		textTransform: "uppercase",
-	},
-	button: {
-		borderWidth: 2,
-		borderRadius: radius.sm,
-		paddingVertical: 12,
-		paddingHorizontal: 12,
-	},
-	buttonLabel: {
-		fontFamily: "SpaceMono",
-		fontSize: 13,
-		lineHeight: 18,
+	smallLabel: {
+		fontSize: 12,
+		lineHeight: 16,
+		fontWeight: "800",
 		textTransform: "uppercase",
 	},
 });

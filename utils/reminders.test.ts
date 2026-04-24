@@ -40,8 +40,8 @@ describe("reminder derivation", () => {
 		expect(extended).toHaveLength(2);
 		expect(extended.map((item) => item.title)).toEqual(
 			expect.arrayContaining([
-				"Everyday Gold extended date tomorrow",
-				"Everyday Gold extended follow-up",
+				"Continue Everyday Gold tomorrow",
+				"Continue Everyday Gold follow-up",
 			]),
 		);
 	});

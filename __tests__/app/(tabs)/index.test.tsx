@@ -1,80 +1,87 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 
-import RemindersScreen from "@/app/(tabs)/index";
-import type { DerivedReminder } from "@/types/domain";
+import CardsScreen from "@/app/(tabs)/index";
+import { makeCard, makeDraft } from "@/test/factories";
 
 const mockUseCards = jest.fn();
-const mockDeriveReminders = jest.fn();
-const mockGetReminderMetrics = jest.fn();
 
 jest.mock("@/hooks/useCards", () => ({
 	useCards: () => mockUseCards(),
 }));
 
 jest.mock("@/utils/reminders", () => ({
-	deriveReminders: (...args: unknown[]) => mockDeriveReminders(...args),
-	getReminderMetrics: (...args: unknown[]) => mockGetReminderMetrics(...args),
+	deriveReminders: jest.fn(() => []),
 }));
 
-describe("RemindersScreen", () => {
-	it("shows the empty state and routes to new card creation", () => {
+describe("CardsScreen", () => {
+	it("shows grouped cards and opens the add-card bottom sheet", async () => {
+		const mockCreateCard = jest.fn(async () => null);
 		mockUseCards.mockReturnValue({
-			cards: [],
-			acknowledgeReminder: jest.fn(),
-			settleCycle: jest.fn(),
-			snoozeReminder: jest.fn(),
+			cards: [
+				makeCard(),
+				makeCard({
+					id: "card-2",
+					name: "Netflix Family",
+					provider: "Netflix",
+					groupName: "Streaming",
+				}),
+				makeCard({
+					id: "card-3",
+					name: "Figma Pro",
+					provider: "Figma",
+					groupName: "Work",
+				}),
+			],
+			createCard: mockCreateCard,
+			defaultDraft: () =>
+				makeDraft({
+					name: "",
+					provider: "",
+					last4: "",
+					dueDay: "",
+					groupName: "",
+					note: "",
+				}),
 		});
-		mockDeriveReminders.mockReturnValue([]);
-		mockGetReminderMetrics.mockReturnValue({ cardCount: 0, activeCount: 0, overdueCount: 0 });
 
-		render(<RemindersScreen />);
-		const { router } = jest.requireMock("expo-router");
+		render(<CardsScreen />);
 
-		expect(screen.getByText("No cards yet")).toBeOnTheScreen();
-		fireEvent.press(screen.getByText("Add card"));
-		expect(router.push).toHaveBeenCalledWith("/card/new");
+		expect(screen.getByText("Streaming")).toBeOnTheScreen();
+		expect(screen.getByText("Work")).toBeOnTheScreen();
+		expect(screen.getByText("Netflix Family")).toBeOnTheScreen();
+
+		fireEvent.press(screen.getByText("+"));
+
+		expect(
+			screen.getByText("Quick setup for subscription reminders and cancellation notes."),
+		).toBeOnTheScreen();
+
+		fireEvent.changeText(screen.getByPlaceholderText("Netflix"), "Spotify");
+		fireEvent.changeText(screen.getByPlaceholderText("Family plan"), "Spotify Premium");
+		fireEvent.changeText(screen.getByPlaceholderText("4242"), "4242");
+		fireEvent.changeText(screen.getByPlaceholderText("25"), "17");
+		fireEvent.press(screen.getByText("Save card"));
+
+		await waitFor(() =>
+			expect(mockCreateCard).toHaveBeenCalledWith(
+				expect.objectContaining({
+					provider: "Spotify",
+					name: "Spotify Premium",
+					last4: "4242",
+					dueDay: "17",
+				}),
+			),
+		);
 	});
 
-	it("wires reminder actions and navigation", async () => {
-		const mockAcknowledgeReminder = jest.fn(async () => undefined);
-		const mockSnoozeReminder = jest.fn(async () => undefined);
-		const mockSettleCycle = jest.fn(async () => undefined);
-		const reminder: DerivedReminder = {
-			id: "reminder-1",
-			cycleId: "cycle-1",
-			cardId: "card-1",
-			cardName: "Everyday Gold",
-			provider: "American Express",
-			stage: "overdue",
-			title: "Everyday Gold is overdue",
-			subtitle: "Due Apr 15, 2026",
-			scheduledFor: "2026-04-20T00:00:00.000Z",
-			dueDate: "2026-04-15T00:00:00.000Z",
-			tone: "danger",
-			isAcknowledged: false,
-			isSettled: false,
-		};
-
+	it("shows an empty state when there are no cards", () => {
 		mockUseCards.mockReturnValue({
-			cards: [{ id: "card-1" }],
-			acknowledgeReminder: mockAcknowledgeReminder,
-			settleCycle: mockSettleCycle,
-			snoozeReminder: mockSnoozeReminder,
+			cards: [],
+			createCard: jest.fn(async () => null),
+			defaultDraft: () => makeDraft({ name: "", provider: "", last4: "", dueDay: "" }),
 		});
-		mockDeriveReminders.mockReturnValue([reminder]);
-		mockGetReminderMetrics.mockReturnValue({ cardCount: 1, activeCount: 1, overdueCount: 1 });
 
-		render(<RemindersScreen />);
-		const { router } = jest.requireMock("expo-router");
-
-		fireEvent.press(screen.getByText("Acknowledge"));
-		fireEvent.press(screen.getByText("Snooze 12h"));
-		fireEvent.press(screen.getByText("Settle cycle"));
-		fireEvent.press(screen.getByText("Open card"));
-
-		await waitFor(() => expect(mockAcknowledgeReminder).toHaveBeenCalledWith("card-1", "reminder-1"));
-		expect(mockSnoozeReminder).toHaveBeenCalledWith("card-1", "reminder-1", 12);
-		expect(mockSettleCycle).toHaveBeenCalledWith("card-1", "cycle-1");
-		expect(router.push).toHaveBeenCalledWith("/card/card-1");
+		render(<CardsScreen />);
+		expect(screen.getByText("No cards yet")).toBeOnTheScreen();
 	});
 });

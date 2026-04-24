@@ -1,36 +1,55 @@
-import { useState } from "react";
-import {
-	ActivityIndicator,
-	ScrollView,
-	StyleSheet,
-	Text,
-	View,
-} from "react-native";
+import { useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useColorScheme } from "@/components/useColorScheme";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { TextField } from "@/components/ui/TextField";
-import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { radius, spacing } from "@/constants/Tokens";
+import { radius, shadow, spacing, thickness } from "@/constants/Tokens";
+import { useCards } from "@/hooks/useCards";
 import { useQuickNotes } from "@/hooks/useQuickNotes";
-
-function formatTimestamp(value: string) {
-	return new Intl.DateTimeFormat(undefined, {
-		month: "short",
-		day: "numeric",
-		hour: "numeric",
-		minute: "2-digit",
-	}).format(new Date(value));
-}
 
 export default function NotesScreen() {
 	const colorScheme = useColorScheme() ?? "light";
 	const palette = Colors[colorScheme];
+	const { width } = useWindowDimensions();
+	const { cards } = useCards();
 	const { notes, isReady, addNote, deleteNote } = useQuickNotes();
 	const [draft, setDraft] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 
-	async function handleAddNote() {
+	const noteCards = useMemo(
+		() => [
+			...cards
+				.filter((card) => card.note?.trim())
+				.map((card) => ({
+					id: `card:${card.id}`,
+					title: card.name,
+					body: card.note ?? "",
+					meta: `${card.provider} · ${card.intent === "cancel" ? "Cancel" : "Continue"}`,
+					deletable: false,
+				})),
+			...notes.map((note) => ({
+				id: note.id,
+				title: "Quick note",
+				body: note.body,
+				meta: new Intl.DateTimeFormat(undefined, {
+					month: "short",
+					day: "numeric",
+				}).format(new Date(note.createdAt)),
+				deletable: true,
+			})),
+		],
+		[cards, notes],
+	);
+
+	const twoColumn = width >= 390;
+	const tileWidth = twoColumn
+		? (width - spacing.lg * 2 - spacing.sm) / 2
+		: width - spacing.lg * 2;
+
+	async function handleSave() {
 		setIsSaving(true);
 		const saved = await addNote(draft);
 		if (saved) {
@@ -40,141 +59,238 @@ export default function NotesScreen() {
 	}
 
 	return (
-		<ScrollView
-			style={{ backgroundColor: palette.background }}
-			contentContainerStyle={styles.content}
+		<SafeAreaView
+			edges={["top"]}
+			style={[styles.safeArea, { backgroundColor: palette.background }]}
 		>
-			<View
-				style={[
-					styles.section,
-					{ backgroundColor: palette.card, borderColor: palette.border },
-				]}
+			<ScrollView
+				style={{ backgroundColor: palette.background }}
+				contentContainerStyle={styles.content}
+				showsVerticalScrollIndicator={false}
 			>
-				<Text style={[styles.heading, { color: palette.text }]}>Notes</Text>
-				<Text style={[styles.helper, { color: palette.muted }]}>
-					App-level free text only. Create and delete are supported in v1.
-				</Text>
-			</View>
-
-			<View
-				style={[
-					styles.section,
-					{ backgroundColor: palette.card, borderColor: palette.border },
-				]}
-			>
-				<TextField
-					label="New note"
-					value={draft}
-					onChangeText={setDraft}
-					placeholder="Write a reminder to your future self"
-					multiline
-					minHeight={120}
-				/>
-				<PressableScale
-					onPress={() => void handleAddNote()}
-					disabled={isSaving}
-					contentStyle={[
-						styles.button,
-						{ backgroundColor: palette.cardAlt, borderColor: palette.border },
-					]}
-				>
-					<Text style={[styles.buttonLabel, { color: palette.text }]}>
-						{isSaving ? "Saving..." : "Save note"}
-					</Text>
-				</PressableScale>
-			</View>
-
-			{!isReady ? (
-				<ActivityIndicator color={palette.text} style={{ marginTop: 24 }} />
-			) : null}
-
-			{isReady && notes.length === 0 ? (
 				<View
 					style={[
-						styles.section,
-						{ backgroundColor: palette.card, borderColor: palette.border },
+						styles.hero,
+						{
+							backgroundColor: palette.card,
+							borderColor: palette.borderSoft,
+							shadowColor: palette.primary,
+						},
+						shadow.soft,
 					]}
 				>
-					<Text style={[styles.title, { color: palette.text }]}>
-						No notes yet
+					<Text style={[styles.eyebrow, { color: palette.primary }]}>Notes</Text>
+					<Text style={[styles.title, { color: palette.text }]}>Memory stack</Text>
+					<Text style={[styles.subtitle, { color: palette.muted }]}>
+						Saved notes from cards and freeform notes share the same pattern.
 					</Text>
 				</View>
-			) : null}
 
-			{notes.map((note) => (
 				<View
-					key={note.id}
 					style={[
-						styles.section,
-						{ backgroundColor: palette.card, borderColor: palette.border },
+						styles.composer,
+						{ backgroundColor: palette.card, borderColor: palette.borderSoft },
 					]}
 				>
-					<Text style={[styles.meta, { color: palette.muted }]}>
-						{formatTimestamp(note.createdAt)}
-					</Text>
-					<Text style={[styles.helper, { color: palette.text }]}>
-						{note.body}
-					</Text>
+					<TextField
+						label="New note"
+						value={draft}
+						onChangeText={setDraft}
+						placeholder="Add a general note you want to remember later."
+						multiline
+						minHeight={104}
+					/>
 					<PressableScale
-						onPress={() => void deleteNote(note.id)}
+						onPress={() => void handleSave()}
+						disabled={isSaving}
 						contentStyle={[
-							styles.button,
-							{ backgroundColor: palette.cardAlt, borderColor: palette.border },
+							styles.primaryButton,
+							{ backgroundColor: palette.primary, borderColor: palette.primary },
 						]}
 					>
-						<Text style={[styles.buttonLabel, { color: palette.text }]}>
-							Delete
+						<Text style={[styles.primaryLabel, { color: palette.onPrimary }]}>
+							{isSaving ? "Saving..." : "Save note"}
 						</Text>
 					</PressableScale>
 				</View>
-			))}
-		</ScrollView>
+
+				{!isReady ? (
+					<Text style={[styles.loading, { color: palette.muted }]}>Loading…</Text>
+				) : null}
+
+				{isReady && noteCards.length === 0 ? (
+					<View
+						style={[
+							styles.emptyCard,
+							{ backgroundColor: palette.card, borderColor: palette.borderSoft },
+						]}
+					>
+						<Text style={[styles.emptyTitle, { color: palette.text }]}>
+							No notes yet
+						</Text>
+						<Text style={[styles.emptyBody, { color: palette.muted }]}>
+							Add a quick note or save one inside a card.
+						</Text>
+					</View>
+				) : null}
+
+				<View style={styles.grid}>
+					{noteCards.map((item) => (
+						<View
+							key={item.id}
+							style={[
+								styles.tile,
+								{
+									width: tileWidth,
+									backgroundColor: palette.card,
+									borderColor: palette.borderSoft,
+									shadowColor: palette.primary,
+								},
+								shadow.soft,
+							]}
+						>
+							<Text style={[styles.tileTitle, { color: palette.text }]}>
+								{item.title}
+							</Text>
+							<Text style={[styles.tileMeta, { color: palette.muted }]}>
+								{item.meta}
+							</Text>
+							<Text style={[styles.tileBody, { color: palette.text }]}>
+								{item.body}
+							</Text>
+							{item.deletable ? (
+								<PressableScale
+									onPress={() => void deleteNote(item.id)}
+									contentStyle={[
+										styles.secondaryButton,
+										{
+											backgroundColor: palette.cardAlt,
+											borderColor: palette.borderSoft,
+										},
+									]}
+								>
+									<Text style={[styles.secondaryLabel, { color: palette.text }]}>
+										Delete
+									</Text>
+								</PressableScale>
+							) : null}
+						</View>
+					))}
+				</View>
+			</ScrollView>
+		</SafeAreaView>
 	);
 }
 
 const styles = StyleSheet.create({
+	safeArea: {
+		flex: 1,
+	},
 	content: {
 		padding: spacing.lg,
-		gap: spacing.md,
+		gap: spacing.lg,
 	},
-	section: {
-		borderWidth: 2,
-		borderRadius: radius.sm,
-		padding: spacing.md,
-		gap: 8,
+	hero: {
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3D,
+		borderRadius: radius.xl,
+		padding: spacing.xl,
+		gap: spacing.xs,
 	},
-	heading: {
-		fontFamily: "SpaceMono",
-		fontSize: 20,
-		lineHeight: 28,
+	eyebrow: {
+		fontSize: 13,
+		lineHeight: 18,
+		fontWeight: "800",
 		textTransform: "uppercase",
 	},
 	title: {
-		fontFamily: "SpaceMono",
-		fontSize: 16,
-		lineHeight: 24,
-		textTransform: "uppercase",
+		fontSize: 30,
+		lineHeight: 36,
+		fontWeight: "900",
 	},
-	helper: {
-		fontFamily: "SpaceMono",
-		fontSize: 14,
+	subtitle: {
+		fontSize: 15,
 		lineHeight: 22,
 	},
-	meta: {
-		fontFamily: "SpaceMono",
+	composer: {
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3D,
+		borderRadius: radius.lg,
+		padding: spacing.md,
+		gap: spacing.md,
+	},
+	primaryButton: {
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3D,
+		borderRadius: radius.lg,
+		paddingVertical: 16,
+		alignItems: "center",
+	},
+	primaryLabel: {
+		fontSize: 15,
+		lineHeight: 20,
+		fontWeight: "800",
+	},
+	loading: {
+		fontSize: 14,
+		lineHeight: 20,
+		fontWeight: "600",
+	},
+	emptyCard: {
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3D,
+		borderRadius: radius.lg,
+		padding: spacing.lg,
+		gap: spacing.xs,
+	},
+	emptyTitle: {
+		fontSize: 20,
+		lineHeight: 26,
+		fontWeight: "800",
+	},
+	emptyBody: {
+		fontSize: 14,
+		lineHeight: 20,
+	},
+	grid: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		gap: spacing.sm,
+	},
+	tile: {
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3D,
+		borderRadius: radius.lg,
+		padding: spacing.md,
+		gap: spacing.xs,
+	},
+	tileTitle: {
+		fontSize: 18,
+		lineHeight: 22,
+		fontWeight: "800",
+	},
+	tileMeta: {
 		fontSize: 12,
-		lineHeight: 18,
+		lineHeight: 16,
+		fontWeight: "700",
 	},
-	button: {
-		borderWidth: 2,
-		borderRadius: radius.sm,
-		paddingVertical: 10,
+	tileBody: {
+		fontSize: 14,
+		lineHeight: 20,
+	},
+	secondaryButton: {
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3DSmall,
+		borderRadius: 999,
 		paddingHorizontal: 12,
+		paddingVertical: 10,
+		alignSelf: "flex-start",
+		marginTop: spacing.xs,
 	},
-	buttonLabel: {
-		fontFamily: "SpaceMono",
-		fontSize: 13,
-		lineHeight: 18,
+	secondaryLabel: {
+		fontSize: 12,
+		lineHeight: 16,
+		fontWeight: "800",
 		textTransform: "uppercase",
 	},
 });

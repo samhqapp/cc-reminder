@@ -51,6 +51,16 @@ function normalizeDay(value: string) {
 	return Math.max(1, Math.min(31, Math.trunc(number)));
 }
 
+function normalizeCard(card: Card): Card {
+	return {
+		...card,
+		intent: card.intent ?? "continue",
+		groupName: card.groupName?.trim() || undefined,
+		note: card.note?.trim() || undefined,
+		companyKey: card.companyKey,
+	};
+}
+
 export function validateCardDraft(draft: CardDraft) {
 	if (!draft.name.trim()) return "Card name is required.";
 	if (!draft.provider.trim()) return "Provider is required.";
@@ -90,9 +100,13 @@ function toCard(draft: CardDraft, existing?: Card): Card {
 		id: existing?.id ?? `${Date.now()}`,
 		name: draft.name.trim(),
 		provider: draft.provider.trim(),
+		companyKey: draft.companyKey,
 		last4: draft.last4.trim(),
 		billingDay,
 		dueDay,
+		groupName: draft.groupName.trim() || undefined,
+		intent: draft.intent,
+		note: draft.note.trim() || undefined,
 		tags,
 		notificationsEnabled: draft.notificationsEnabled,
 		extendedTracking: draft.extendedTrackingEnabled
@@ -115,9 +129,13 @@ function createDefaultDraft(): CardDraft {
 	return {
 		name: "",
 		provider: "",
+		companyKey: undefined,
 		last4: "",
 		billingDay: "",
 		dueDay: "",
+		groupName: "",
+		intent: "continue",
+		note: "",
 		tags: "",
 		notificationsEnabled: true,
 		extendedTrackingEnabled: false,
@@ -132,9 +150,13 @@ export function mapCardToDraft(card: Card): CardDraft {
 	return {
 		name: card.name,
 		provider: card.provider,
+		companyKey: card.companyKey,
 		last4: card.last4,
 		billingDay: card.billingDay ? String(card.billingDay) : "",
 		dueDay: String(card.dueDay),
+		groupName: card.groupName ?? "",
+		intent: card.intent ?? "continue",
+		note: card.note ?? "",
 		tags: card.tags.join(", "),
 		notificationsEnabled: card.notificationsEnabled,
 		extendedTrackingEnabled: Boolean(card.extendedTracking),
@@ -158,7 +180,9 @@ function useCardsState() {
 		let isMounted = true;
 
 		async function hydrate() {
-			const storedCards = await loadJson<Card[]>(storageKeys.cards, []);
+			const storedCards = (
+				await loadJson<Card[]>(storageKeys.cards, [])
+			).map(normalizeCard);
 			if (!isMounted) return;
 			setCards(storedCards);
 			setIsReady(true);

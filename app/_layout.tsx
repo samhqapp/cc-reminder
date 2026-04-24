@@ -30,8 +30,8 @@ Notifications.setNotificationHandler({
 });
 
 export const unstable_settings = {
-	// Ensure that reloading on `/modal` keeps a back button present.
-	initialRouteName: "(tabs)",
+	// Route root launches through `index`, which decides onboarding vs. tabs.
+	initialRouteName: "index",
 };
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -91,7 +91,12 @@ function RootLayoutNav() {
 		}
 
 		const firstSegment = String(segments[0] ?? "");
+		const atRoot = firstSegment.length === 0;
 		const inOnboarding = firstSegment === "onboarding";
+
+		if (atRoot) {
+			return;
+		}
 
 		if (!hasCompletedOnboarding && !inOnboarding) {
 			router.replace("/onboarding");
@@ -119,6 +124,7 @@ function RootLayoutNav() {
 					},
 				}}
 			>
+				<Stack.Screen name="index" options={{ headerShown: false }} />
 				<Stack.Screen name="onboarding" options={{ headerShown: false }} />
 				<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 				<Stack.Screen

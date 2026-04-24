@@ -24,13 +24,19 @@ export type ExtendedTracking = {
 	paidAmountNote?: string;
 };
 
+export type SubscriptionIntent = "cancel" | "continue";
+
 export type Card = {
 	id: string;
 	name: string;
 	provider: string;
+	companyKey?: string;
 	last4: string;
 	billingDay?: number;
 	dueDay: number;
+	groupName?: string;
+	intent: SubscriptionIntent;
+	note?: string;
 	tags: string[];
 	notificationsEnabled: boolean;
 	extendedTracking?: ExtendedTracking;
@@ -43,9 +49,13 @@ export type Card = {
 export type CardDraft = {
 	name: string;
 	provider: string;
+	companyKey?: string;
 	last4: string;
 	billingDay: string;
 	dueDay: string;
+	groupName: string;
+	intent: SubscriptionIntent;
+	note: string;
 	tags: string;
 	notificationsEnabled: boolean;
 	extendedTrackingEnabled: boolean;
@@ -70,6 +80,10 @@ export type DerivedReminder = {
 	cardId: string;
 	cardName: string;
 	provider: string;
+	companyKey?: string;
+	groupName?: string;
+	intent: SubscriptionIntent;
+	note?: string;
 	stage: ReminderStageKind;
 	title: string;
 	subtitle: string;

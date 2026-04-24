@@ -34,6 +34,10 @@ function buildReminder(
 		cardId: card.id,
 		cardName: card.name,
 		provider: card.provider,
+		companyKey: card.companyKey,
+		groupName: card.groupName,
+		intent: card.intent ?? "continue",
+		note: card.note,
 		stage: options.stage,
 		title: options.title,
 		subtitle: options.subtitle,
@@ -55,6 +59,7 @@ export function deriveReminders(cards: Card[], now = new Date()) {
 	const reminders: DerivedReminder[] = [];
 
 	for (const card of cards) {
+		const intentLabel = card.intent === "cancel" ? "Cancel" : "Continue";
 		const nextDue = getNextOccurrence(card.dueDay, today);
 		const previousDue = getPreviousOccurrence(card.dueDay, today);
 		const activeDueCycle = previousDue <= today ? previousDue : nextDue;
@@ -72,7 +77,7 @@ export function deriveReminders(cards: Card[], now = new Date()) {
 					stage: "billing",
 					scheduledFor: billingDate,
 					dueDate: nextDue,
-					title: `${card.name} billing checkpoint`,
+					title: `${intentLabel} prep for ${card.name}`,
 					subtitle: `${formatShortDate(billingDate)} · ${relativeDayLabel(billingDate, today)}`,
 					tone: "neutral",
 				}),
@@ -87,9 +92,14 @@ export function deriveReminders(cards: Card[], now = new Date()) {
 					stage: `due-soon-${offset}` as ReminderStageKind,
 					scheduledFor: stageDate,
 					dueDate: nextDue,
-					title: `${card.name} due in ${offset} day${offset === 1 ? "" : "s"}`,
-					subtitle: `${card.provider} · Due ${formatFullDate(nextDue)}`,
-					tone: offset === 1 ? "warning" : "accent",
+					title: `${intentLabel} ${card.name} in ${offset} day${offset === 1 ? "" : "s"}`,
+					subtitle: `${card.provider} · Renewal ${formatFullDate(nextDue)}`,
+					tone:
+						card.intent === "cancel"
+							? "warning"
+							: offset === 1
+								? "warning"
+								: "accent",
 				}),
 			);
 		}
@@ -100,9 +110,9 @@ export function deriveReminders(cards: Card[], now = new Date()) {
 				stage: "due-today",
 				scheduledFor: nextDue,
 				dueDate: nextDue,
-				title: `${card.name} due today`,
-				subtitle: `${card.provider} · ${formatFullDate(nextDue)}`,
-				tone: "warning",
+				title: `${intentLabel} ${card.name} today`,
+				subtitle: `${card.provider} · Renewal ${formatFullDate(nextDue)}`,
+				tone: card.intent === "cancel" ? "danger" : "warning",
 			}),
 		);
 
@@ -113,8 +123,8 @@ export function deriveReminders(cards: Card[], now = new Date()) {
 					stage: "overdue",
 					scheduledFor: today,
 					dueDate: previousDue,
-					title: `${card.name} is overdue`,
-					subtitle: `Due ${formatFullDate(previousDue)} · repeats daily until settled`,
+					title: `${card.name} still needs a decision`,
+					subtitle: `${intentLabel} target ${formatFullDate(previousDue)} · repeats daily until handled`,
 					tone: "danger",
 				}),
 			);
@@ -135,7 +145,7 @@ export function deriveReminders(cards: Card[], now = new Date()) {
 							stage: "extended",
 							scheduledFor: dayBeforeExtended,
 							dueDate: extendedDate,
-							title: `${card.name} extended date tomorrow`,
+							title: `${intentLabel} ${card.name} tomorrow`,
 							subtitle: `${card.provider} · Manual date ${formatFullDate(extendedDate)}`,
 							tone: "warning",
 						}),
@@ -149,7 +159,7 @@ export function deriveReminders(cards: Card[], now = new Date()) {
 							stage: "extended",
 							scheduledFor: extendedDate,
 							dueDate: extendedDate,
-							title: `${card.name} extended follow-up`,
+							title: `${intentLabel} ${card.name} follow-up`,
 							subtitle: `${card.provider} · Manual date ${formatFullDate(extendedDate)}`,
 							tone: "success",
 						}),
@@ -161,7 +171,7 @@ export function deriveReminders(cards: Card[], now = new Date()) {
 							stage: "extended",
 							scheduledFor: today,
 							dueDate: extendedDate,
-							title: `${card.name} extended date passed`,
+							title: `${card.name} follow-up passed`,
 							subtitle: `Manual date ${formatFullDate(extendedDate)} · settle when handled`,
 							tone: "danger",
 						}),

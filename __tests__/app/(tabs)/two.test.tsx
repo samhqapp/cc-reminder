@@ -1,10 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 
-import CardsScreen from "@/app/(tabs)/two";
-import { makeCard } from "@/test/factories";
+import RemindersScreen from "@/app/(tabs)/two";
+import type { DerivedReminder } from "@/types/domain";
 
 const mockUseCards = jest.fn();
 const mockDeriveReminders = jest.fn();
+const mockGetReminderMetrics = jest.fn();
 
 jest.mock("@/hooks/useCards", () => ({
 	useCards: () => mockUseCards(),
@@ -12,49 +13,74 @@ jest.mock("@/hooks/useCards", () => ({
 
 jest.mock("@/utils/reminders", () => ({
 	deriveReminders: (...args: unknown[]) => mockDeriveReminders(...args),
+	getReminderMetrics: (...args: unknown[]) => mockGetReminderMetrics(...args),
 }));
 
-describe("CardsScreen", () => {
-	it("filters cards by search and tag, then routes to create and detail screens", () => {
+describe("RemindersScreen", () => {
+	it("renders the reminder grid and wires reminder actions", async () => {
+		const mockAcknowledgeReminder = jest.fn(async () => undefined);
+		const mockSnoozeReminder = jest.fn(async () => undefined);
+		const mockSettleCycle = jest.fn(async () => undefined);
+		const reminder: DerivedReminder = {
+			id: "reminder-1",
+			cycleId: "cycle-1",
+			cardId: "card-1",
+			cardName: "Spotify Premium",
+			provider: "Spotify",
+			companyKey: "spotify",
+			groupName: "Streaming",
+			intent: "cancel",
+			note: "Cancel two days before renewal.",
+			stage: "overdue",
+			title: "Spotify Premium still needs a decision",
+			subtitle: "Cancel target Apr 15, 2026 · repeats daily until handled",
+			scheduledFor: "2026-04-20T00:00:00.000Z",
+			dueDate: "2026-04-15T00:00:00.000Z",
+			tone: "danger",
+			isAcknowledged: false,
+			isSettled: false,
+		};
+
 		mockUseCards.mockReturnValue({
 			cards: [
-				makeCard(),
-				makeCard({ id: "card-2", name: "Blue Cash", provider: "Amex", last4: "9999", tags: ["backup"] }),
+				{
+					id: "card-1",
+					name: "Spotify Premium",
+					provider: "Spotify",
+					intent: "cancel",
+					note: "Cancel two days before renewal.",
+				},
 			],
-			tagPool: ["backup", "daily", "travel"],
+			acknowledgeReminder: mockAcknowledgeReminder,
+			settleCycle: mockSettleCycle,
+			snoozeReminder: mockSnoozeReminder,
 		});
-		mockDeriveReminders.mockReturnValue([{ title: "Due soon", scheduledFor: "2026-04-25T00:00:00.000Z" }]);
+		mockDeriveReminders.mockReturnValue([reminder]);
+		mockGetReminderMetrics.mockReturnValue({ cardCount: 1, activeCount: 1, overdueCount: 1 });
 
-		render(<CardsScreen />);
-		const { router } = jest.requireMock("expo-router");
+		render(<RemindersScreen />);
 
-		expect(screen.getByText("Everyday Gold")).toBeOnTheScreen();
-		expect(screen.getByText("Blue Cash")).toBeOnTheScreen();
+		expect(screen.getByText("Decision board")).toBeOnTheScreen();
+		fireEvent.press(screen.getByText("Seen"));
+		fireEvent.press(screen.getByText("Snooze"));
+		fireEvent.press(screen.getByText("Handled"));
 
-		fireEvent.changeText(screen.getByPlaceholderText("Search by card name, provider, last 4, or tag"), "9999");
-		expect(screen.queryByText("Everyday Gold")).toBeNull();
-		expect(screen.getByText("Blue Cash")).toBeOnTheScreen();
-
-		fireEvent.changeText(screen.getByPlaceholderText("Search by card name, provider, last 4, or tag"), "");
-		fireEvent.press(screen.getByText("backup"));
-		expect(screen.queryByText("Everyday Gold")).toBeNull();
-		expect(screen.getByText("Blue Cash")).toBeOnTheScreen();
-
-		fireEvent.press(screen.getByText("Add card"));
-		expect(router.push).toHaveBeenCalledWith("/card/new");
-
-		fireEvent.press(screen.getByText("Blue Cash"));
-		expect(router.push).toHaveBeenCalledWith("/card/card-2");
+		await waitFor(() => expect(mockAcknowledgeReminder).toHaveBeenCalledWith("card-1", "reminder-1"));
+		expect(mockSnoozeReminder).toHaveBeenCalledWith("card-1", "reminder-1", 12);
+		expect(mockSettleCycle).toHaveBeenCalledWith("card-1", "cycle-1");
 	});
 
-	it("shows the empty state when no cards match the filters", () => {
+	it("shows the empty state when there are no reminders", () => {
 		mockUseCards.mockReturnValue({
 			cards: [],
-			tagPool: [],
+			acknowledgeReminder: jest.fn(),
+			settleCycle: jest.fn(),
+			snoozeReminder: jest.fn(),
 		});
 		mockDeriveReminders.mockReturnValue([]);
+		mockGetReminderMetrics.mockReturnValue({ cardCount: 0, activeCount: 0, overdueCount: 0 });
 
-		render(<CardsScreen />);
-		expect(screen.getByText("No cards found")).toBeOnTheScreen();
+		render(<RemindersScreen />);
+		expect(screen.getByText("Nothing to act on")).toBeOnTheScreen();
 	});
 });

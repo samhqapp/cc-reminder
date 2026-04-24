@@ -30,7 +30,7 @@ jest.mock("@/hooks/useCards", () => ({
 const RootLayout = require("@/app/_layout").default;
 
 describe("RootLayout", () => {
-	it("redirects first-time users into onboarding", () => {
+	it("redirects first-time deep links into onboarding", () => {
 		const expoRouter = jest.requireMock("expo-router");
 
 		mockUseFonts.mockReturnValue([true, null]);
@@ -38,7 +38,7 @@ describe("RootLayout", () => {
 			isReady: true,
 			hasCompletedOnboarding: false,
 		});
-		expoRouter.useSegments.mockReturnValue([]);
+		expoRouter.useSegments.mockReturnValue(["(tabs)"]);
 
 		render(<RootLayout />);
 
