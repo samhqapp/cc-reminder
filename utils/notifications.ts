@@ -4,8 +4,20 @@ import { Platform } from "react-native";
 import type { Card } from "@/types/domain";
 import { deriveReminders } from "@/utils/reminders";
 
-export async function requestNotificationPermission() {
+/** Returns false when running in Expo Go on SDK 53+ (notifications removed). */
+async function notificationsAvailable(): Promise<boolean> {
 	if (Platform.OS === "web") {
+		return false;
+	}
+	try {
+		return await Notifications.isAvailableAsync();
+	} catch {
+		return false;
+	}
+}
+
+export async function requestNotificationPermission() {
+	if (!(await notificationsAvailable())) {
 		return;
 	}
 
@@ -16,7 +28,7 @@ export async function requestNotificationPermission() {
 }
 
 export async function syncReminderNotifications(cards: Card[]) {
-	if (Platform.OS === "web") {
+	if (!(await notificationsAvailable())) {
 		return;
 	}
 

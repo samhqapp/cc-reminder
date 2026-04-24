@@ -149,105 +149,19 @@ export default function NotesScreen() {
 								shadow.soft,
 							]}
 						>
+							<Text style={[styles.tileMeta, { color: palette.muted }]}>
+								{item.meta}
+							</Text>
 							<Text style={[styles.tileTitle, { color: palette.text }]}>
 								{item.title}
 							</Text>
-							<Text style={[styles.emptyTitle, { color: palette.text }]}>
-								No notes saved
-							</Text>
-							<Text style={[styles.emptyBody, { color: palette.muted }]}>
-								Add notes to your cards to keep track of cancellation links, phone numbers, and support context.
+							<Text style={[styles.tileBody, { color: palette.muted }]}>
+								{item.body}
 							</Text>
 						</View>
-					) : null}
-
-					<View style={styles.list}>
-						{activeCards.map((card) => {
-							const companyTheme = findCompanyPreset(
-								card.provider,
-								card.companyKey,
-							);
-							const editingThis = isEditing && activeCardId === card.id;
-
-							return (
-								<View
-									key={card.id}
-									style={[
-										styles.card,
-										{
-											backgroundColor: palette.card,
-											borderColor: palette.border,
-											borderBottomColor: palette.border3D,
-										},
-									]}
-								>
-									<View style={styles.cardHeader}>
-										<View
-											style={[
-												styles.logoBadge,
-												{ backgroundColor: companyTheme?.accent ?? palette.primary },
-											]}
-										>
-											<Text style={[styles.logoLabel, { color: palette.onPrimary }]}>
-												{card.provider.slice(0, 2).toUpperCase()}
-											</Text>
-										</View>
-										<View style={styles.cardTextGroup}>
-											<Text style={[styles.cardTitle, { color: palette.text }]}>
-												{card.name}
-											</Text>
-											<Text style={[styles.cardMeta, { color: palette.muted }]}>
-												{card.provider}
-											</Text>
-										</View>
-									</View>
-
-									{editingThis ? (
-										<View style={styles.editorWrap}>
-											<TextField
-												label="Edit Note"
-												value={draftNote}
-												onChangeText={setDraftNote}
-												multiline
-												minHeight={120}
-												autoFocus
-											/>
-											<View style={styles.editorActions}>
-												<Button 
-													title="Cancel" 
-													variant="secondary"
-													style={{ flex: 1 }}
-													onPress={handleCancel} 
-												/>
-												<Button 
-													title="Save Note" 
-													variant="success"
-													style={{ flex: 1 }}
-													onPress={() => void handleSave()} 
-												/>
-											</View>
-										</View>
-									) : (
-										<>
-											<Text style={[styles.noteContent, { color: palette.text }]}>
-												{card.note}
-											</Text>
-											<View style={styles.actions}>
-												<Button 
-													title="Edit Note" 
-													variant="secondary"
-													style={{ flex: 1 }}
-													onPress={() => handleStartEdit(card)} 
-												/>
-											</View>
-										</>
-									)}
-								</View>
-							);
-						})}
-					</View>
-				</ScrollView>
-			</KeyboardAvoidingView>
+					))}
+				</View>
+			</ScrollView>
 		</SafeAreaView>
 	);
 }
@@ -326,3 +240,4 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 	},
 });
+
