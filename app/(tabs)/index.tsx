@@ -7,14 +7,13 @@ import { AddCardSheet } from "@/components/card/AddCardSheet";
 import { NoteSheet } from "@/components/card/NoteSheet";
 import { useColorScheme } from "@/components/useColorScheme";
 import { FloatingAddButton } from "@/components/ui/FloatingAddButton";
-import { PressableScale } from "@/components/ui/PressableScale";
+import { Button } from "@/components/ui/Button";
 import Colors from "@/constants/Colors";
 import { radius, shadow, spacing, thickness } from "@/constants/Tokens";
 import { findCompanyPreset } from "@/data/companyPresets";
 import { useCards } from "@/hooks/useCards";
 import type { Card } from "@/types/domain";
 import { formatFullDate, getNextOccurrence, relativeDayLabel } from "@/utils/date";
-import { deriveReminders } from "@/utils/reminders";
 
 export default function CardsScreen() {
 	const colorScheme = useColorScheme() ?? "light";
@@ -22,28 +21,6 @@ export default function CardsScreen() {
 	const { cards, createCard, defaultDraft } = useCards();
 	const [isAddOpen, setIsAddOpen] = useState(false);
 	const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-
-	const groupedCards = useMemo(() => {
-		const bucket = new Map<string, Card[]>();
-
-		for (const card of cards) {
-			const key = card.groupName?.trim() || "Ungrouped";
-			const current = bucket.get(key) ?? [];
-			current.push(card);
-			bucket.set(key, current);
-		}
-
-		return Array.from(bucket.entries())
-			.map(([group, items]) => ({
-				group,
-				items: [...items].sort((left, right) => left.name.localeCompare(right.name)),
-			}))
-			.sort((left, right) => {
-				if (left.group === "Ungrouped") return 1;
-				if (right.group === "Ungrouped") return -1;
-				return left.group.localeCompare(right.group);
-			});
-	}, [cards]);
 
 	const starterDraft = useMemo(() => defaultDraft(), [defaultDraft]);
 
@@ -57,26 +34,7 @@ export default function CardsScreen() {
 				contentContainerStyle={styles.content}
 				showsVerticalScrollIndicator={false}
 			>
-				<View
-					style={[
-						styles.hero,
-						{
-							backgroundColor: palette.hero,
-							borderColor: palette.border,
-							shadowColor: palette.primary,
-						},
-						shadow.soft,
-					]}
-				>
-					<Text style={[styles.eyebrow, { color: palette.primary }]}>
-						Home
-					</Text>
-					<Text style={[styles.title, { color: palette.text }]}>Cards</Text>
-					<Text style={[styles.subtitle, { color: palette.muted }]}>
-						Your subscriptions, grouped the way you think about them. Long press
-						any card to peek at the saved note.
-					</Text>
-				</View>
+				<Text style={[styles.pageTitle, { color: palette.text }]}>Cards</Text>
 
 				{cards.length === 0 ? (
 					<View
@@ -94,114 +52,81 @@ export default function CardsScreen() {
 					</View>
 				) : null}
 
-				{groupedCards.map((section) => (
-					<View key={section.group} style={styles.section}>
-						<Text style={[styles.sectionTitle, { color: palette.text }]}>
-							{section.group}
-						</Text>
-						<View style={styles.list}>
-							{section.items.map((card) => {
-								const companyTheme = findCompanyPreset(
-									card.provider,
-									card.companyKey,
-								);
-								const nextReminder = deriveReminders([card])[0];
-								const nextRenewal = getNextOccurrence(card.dueDay);
+				<View style={styles.list}>
+					{cards.map((card) => {
+						const companyTheme = findCompanyPreset(
+							card.provider,
+							card.companyKey,
+						);
+						const nextRenewal = getNextOccurrence(card.dueDay);
 
-								return (
-									<PressableScale
-										key={card.id}
-										onPress={() => router.push(`/card/${card.id}` as never)}
-										onLongPress={() => setSelectedCard(card)}
-										contentStyle={[
-											styles.card,
+						return (
+							<View
+								key={card.id}
+								style={[
+									styles.card,
+									{
+										backgroundColor: palette.card,
+										borderColor: palette.border,
+										borderBottomColor: palette.border3D,
+									},
+								]}
+							>
+								<View style={styles.cardHeader}>
+									<View
+										style={[
+											styles.logoBadge,
 											{
-												backgroundColor:
-													companyTheme?.surface ?? palette.card,
-												borderColor: palette.borderSoft,
-												shadowColor: palette.primary,
+												backgroundColor: companyTheme?.accent ?? palette.primary,
 											},
-											shadow.soft,
 										]}
 									>
-										<View style={styles.cardTop}>
-											<View style={styles.cardHeading}>
-												<View
-													style={[
-														styles.logoBadge,
-														{
-															backgroundColor:
-																companyTheme?.accent ?? palette.primary,
-														},
-													]}
-												>
-													<Text
-														style={[
-															styles.logoLabel,
-															{ color: palette.onPrimary },
-														]}
-													>
-														{card.provider.slice(0, 2).toUpperCase()}
-													</Text>
-												</View>
-												<View style={styles.cardText}>
-													<Text
-														style={[styles.cardTitle, { color: palette.text }]}
-													>
-														{card.name}
-													</Text>
-													<Text
-														style={[styles.cardMeta, { color: palette.muted }]}
-													>
-														{card.provider} · •••• {card.last4}
-													</Text>
-												</View>
-											</View>
-											<View
-												style={[
-													styles.intentPill,
-													{
-														backgroundColor:
-															card.intent === "cancel"
-																? palette.primarySoft
-																: palette.cardAlt,
-													},
-												]}
-											>
-												<Text
-													style={[
-														styles.intentLabel,
-														{
-															color:
-																card.intent === "cancel"
-																	? palette.primary
-																	: palette.success,
-														},
-													]}
-												>
-													{card.intent === "cancel" ? "Cancel" : "Continue"}
-												</Text>
-											</View>
-										</View>
-										<View style={styles.cardBottom}>
-											<Text style={[styles.renewalLabel, { color: palette.text }]}>
-												Next renewal {relativeDayLabel(nextRenewal)}
-											</Text>
-											<Text style={[styles.renewalMeta, { color: palette.muted }]}>
-												{formatFullDate(nextRenewal)}
-											</Text>
-											<Text style={[styles.helper, { color: palette.muted }]}>
-												{nextReminder
-													? nextReminder.title
-													: "No active reminder right now."}
-											</Text>
-										</View>
-									</PressableScale>
-								);
-							})}
-						</View>
-					</View>
-				))}
+										<Text
+											style={[
+												styles.logoLabel,
+												{ color: palette.onPrimary },
+											]}
+										>
+											{card.provider.slice(0, 2).toUpperCase()}
+										</Text>
+									</View>
+									<View style={styles.cardTextGroup}>
+										<Text style={[styles.cardTitle, { color: palette.text }]}>
+											{card.name}
+										</Text>
+										<Text style={[styles.cardMeta, { color: palette.muted }]}>
+											{card.provider} · •••• {card.last4}
+										</Text>
+									</View>
+								</View>
+
+								<View style={styles.cardInfo}>
+									<Text style={[styles.renewalLabel, { color: palette.text }]}>
+										Next renewal {relativeDayLabel(nextRenewal)}
+									</Text>
+									<Text style={[styles.renewalMeta, { color: palette.muted }]}>
+										{formatFullDate(nextRenewal)}
+									</Text>
+								</View>
+
+								<View style={styles.cardActions}>
+									<Button 
+										title="Details" 
+										variant="secondary" 
+										style={{ flex: 1 }}
+										onPress={() => router.push(`/card/${card.id}` as never)}
+									/>
+									<Button 
+										title={card.intent === "cancel" ? "Cancel" : "Keep"} 
+										variant={card.intent === "cancel" ? "danger" : "primary"}
+										style={{ flex: 1 }}
+										onPress={() => setSelectedCard(card)}
+									/>
+								</View>
+							</View>
+						);
+					})}
+				</View>
 			</ScrollView>
 
 			<View style={styles.fabWrap}>
@@ -234,132 +159,87 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 	content: {
-		padding: spacing.lg,
-		paddingBottom: 128,
-		gap: spacing.lg,
-	},
-	hero: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.xl,
 		padding: spacing.xl,
-		gap: spacing.xs,
+		paddingBottom: 128,
+		gap: spacing.xl,
 	},
-	eyebrow: {
-		fontSize: 13,
-		lineHeight: 18,
-		fontWeight: "800",
-		textTransform: "uppercase",
-	},
-	title: {
-		fontSize: 30,
-		lineHeight: 36,
-		fontWeight: "900",
-	},
-	subtitle: {
-		fontSize: 15,
-		lineHeight: 22,
+	pageTitle: {
+		fontFamily: "Nunito_900Black",
+		fontSize: 32,
+		marginBottom: 8,
 	},
 	emptyCard: {
 		borderWidth: thickness.border,
 		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.lg,
-		padding: spacing.lg,
-		gap: spacing.xs,
+		borderRadius: radius.xl,
+		padding: spacing.xl,
+		gap: spacing.sm,
 	},
 	emptyTitle: {
+		fontFamily: "Nunito_800ExtraBold",
 		fontSize: 20,
-		lineHeight: 26,
-		fontWeight: "800",
 	},
 	emptyBody: {
-		fontSize: 14,
-		lineHeight: 20,
-	},
-	section: {
-		gap: spacing.sm,
-	},
-	sectionTitle: {
-		fontSize: 18,
-		lineHeight: 24,
-		fontWeight: "800",
+		fontFamily: "Nunito_700Bold",
+		fontSize: 16,
 	},
 	list: {
-		gap: spacing.sm,
+		gap: spacing.lg,
 	},
 	card: {
 		borderWidth: thickness.border,
 		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.lg,
-		padding: spacing.md,
+		borderRadius: radius.xl,
+		padding: spacing.xl,
+		gap: spacing.lg,
+	},
+	cardHeader: {
+		flexDirection: "row",
+		alignItems: "center",
 		gap: spacing.md,
 	},
-	cardTop: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		gap: spacing.sm,
-	},
-	cardHeading: {
-		flexDirection: "row",
-		gap: spacing.sm,
-		flex: 1,
-	},
 	logoBadge: {
-		width: 46,
-		height: 46,
+		width: 48,
+		height: 48,
 		borderRadius: radius.md,
 		alignItems: "center",
 		justifyContent: "center",
 	},
 	logoLabel: {
-		fontSize: 14,
-		lineHeight: 18,
-		fontWeight: "800",
+		fontFamily: "Nunito_900Black",
+		fontSize: 16,
 	},
-	cardText: {
+	cardTextGroup: {
 		flex: 1,
-		gap: 2,
 	},
 	cardTitle: {
-		fontSize: 18,
-		lineHeight: 22,
-		fontWeight: "800",
+		fontFamily: "Nunito_800ExtraBold",
+		fontSize: 20,
+		marginBottom: 2,
 	},
 	cardMeta: {
-		fontSize: 13,
-		lineHeight: 18,
+		fontFamily: "Nunito_700Bold",
+		fontSize: 14,
 	},
-	intentPill: {
-		borderRadius: 999,
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		alignSelf: "flex-start",
-	},
-	intentLabel: {
-		fontSize: 12,
-		lineHeight: 16,
-		fontWeight: "800",
-		textTransform: "uppercase",
-	},
-	cardBottom: {
+	cardInfo: {
 		gap: 2,
 	},
 	renewalLabel: {
-		fontSize: 14,
-		lineHeight: 18,
-		fontWeight: "700",
+		fontFamily: "Nunito_700Bold",
+		fontSize: 16,
 	},
 	renewalMeta: {
-		fontSize: 13,
-		lineHeight: 18,
+		fontFamily: "Nunito_600SemiBold",
+		fontSize: 14,
 	},
-	helper: {
-		fontSize: 13,
-		lineHeight: 18,
+	cardActions: {
+		flexDirection: "row",
+		gap: spacing.sm,
+		marginTop: spacing.xs,
 	},
 	fabWrap: {
 		position: "absolute",
-		left: spacing.lg,
-		bottom: 96,
+		left: spacing.xl,
+		bottom: 110,
 	},
 });

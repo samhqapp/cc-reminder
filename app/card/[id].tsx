@@ -72,23 +72,23 @@ export default function CardDetailScreen() {
 
 const styles = StyleSheet.create({
 	content: {
-		padding: spacing.lg,
+		padding: spacing.xl,
 	},
 	missing: {
 		borderWidth: 2,
+		borderBottomWidth: 4,
 		borderRadius: radius.xl,
 		padding: spacing.xl,
 		gap: spacing.sm,
 	},
 	missingTitle: {
-		fontFamily: "SpaceMono",
+		fontFamily: "Nunito_900Black",
 		fontSize: 24,
 		lineHeight: 32,
-		textTransform: "uppercase",
 	},
 	missingBody: {
-		fontFamily: "SpaceMono",
-		fontSize: 14,
+		fontFamily: "Nunito_700Bold",
+		fontSize: 16,
 		lineHeight: 22,
 	},
 });

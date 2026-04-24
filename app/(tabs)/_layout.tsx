@@ -44,9 +44,8 @@ export default function TabLayout() {
 				},
 				headerShadowVisible: false,
 				headerTitleStyle: {
-					fontFamily: "SpaceMono",
-					fontSize: 16,
-					textTransform: "uppercase",
+					fontFamily: "Nunito_900Black",
+					fontSize: 18,
 					color: palette.text,
 				},
 				headerShown: false,

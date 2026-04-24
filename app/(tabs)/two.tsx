@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { NoteSheet } from "@/components/card/NoteSheet";
 import { useColorScheme } from "@/components/useColorScheme";
 import { PressableScale } from "@/components/ui/PressableScale";
+import { Button } from "@/components/ui/Button";
 import Colors from "@/constants/Colors";
 import { radius, shadow, spacing, thickness } from "@/constants/Tokens";
 import { findCompanyPreset } from "@/data/companyPresets";
@@ -30,10 +31,14 @@ export default function RemindersScreen() {
 		() => getReminderMetrics(cards, reminders),
 		[cards, reminders],
 	);
-	const twoColumn = width >= 390;
+	
+	// Max width constraint applied in root layout is 480, so tile calculations 
+	// should be based on actual container width, but we can assume max 480.
+	const containerWidth = Math.min(width, 480);
+	const twoColumn = containerWidth >= 390;
 	const tileWidth = twoColumn
-		? (width - spacing.lg * 2 - spacing.sm) / 2
-		: width - spacing.lg * 2;
+		? (containerWidth - spacing.xl * 2 - spacing.md) / 2
+		: containerWidth - spacing.xl * 2;
 
 	return (
 		<SafeAreaView
@@ -45,28 +50,7 @@ export default function RemindersScreen() {
 				contentContainerStyle={styles.content}
 				showsVerticalScrollIndicator={false}
 			>
-				<View
-					style={[
-						styles.hero,
-						{
-							backgroundColor: palette.card,
-							borderColor: palette.borderSoft,
-							shadowColor: palette.primary,
-						},
-						shadow.soft,
-					]}
-				>
-					<Text style={[styles.eyebrow, { color: palette.primary }]}>
-						Reminders
-					</Text>
-					<Text style={[styles.title, { color: palette.text }]}>
-						Decision board
-					</Text>
-					<Text style={[styles.subtitle, { color: palette.muted }]}>
-						{metrics.activeCount} active · {metrics.cardCount} cards ·{" "}
-						{metrics.overdueCount} overdue
-					</Text>
-				</View>
+				<Text style={[styles.pageTitle, { color: palette.text }]}>Decision board</Text>
 
 				{reminders.length === 0 ? (
 					<View
@@ -162,15 +146,14 @@ function ReminderTile({
 				{
 					width,
 					backgroundColor: companySurface,
-					borderColor: palette.borderSoft,
-					shadowColor: toneColor,
+					borderColor: palette.border,
+					borderBottomColor: palette.border3D,
 				},
-				shadow.soft,
 			]}
 		>
 			<View style={styles.tileHeader}>
 				<Text style={[styles.badge, { color: toneColor }]}>
-					{reminder.intent === "cancel" ? "Cancel" : "Continue"}
+					{reminder.intent === "cancel" ? "Cancel" : "Keep"}
 				</Text>
 				<Text style={[styles.badgeMuted, { color: palette.muted }]}>
 					{relativeDayLabel(reminder.dueDate)}
@@ -182,39 +165,22 @@ function ReminderTile({
 			<Text style={[styles.tileMeta, { color: palette.muted }]}>
 				{formatFullDate(reminder.dueDate)}
 			</Text>
-			<Text style={[styles.tileBody, { color: palette.muted }]}>
+			<Text style={[styles.tileBody, { color: palette.text }]}>
 				{reminder.subtitle}
 			</Text>
 			<View style={styles.tileActions}>
-				<PressableScale
-					onPress={onAcknowledge}
-					contentStyle={[
-						styles.smallButton,
-						{ backgroundColor: palette.card, borderColor: palette.borderSoft },
-					]}
-				>
-					<Text style={[styles.smallLabel, { color: palette.text }]}>Seen</Text>
-				</PressableScale>
-				<PressableScale
-					onPress={onSnooze}
-					contentStyle={[
-						styles.smallButton,
-						{ backgroundColor: palette.card, borderColor: palette.borderSoft },
-					]}
-				>
-					<Text style={[styles.smallLabel, { color: palette.text }]}>Snooze</Text>
-				</PressableScale>
-				<PressableScale
-					onPress={onHandle}
-					contentStyle={[
-						styles.smallButton,
-						{ backgroundColor: palette.primary, borderColor: palette.primary },
-					]}
-				>
-					<Text style={[styles.smallLabel, { color: palette.onPrimary }]}>
-						Handled
-					</Text>
-				</PressableScale>
+				<Button 
+					title="Handled" 
+					variant={reminder.tone === "danger" ? "danger" : "success"}
+					style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 8 }}
+					onPress={onHandle} 
+				/>
+				<Button 
+					title="Snooze" 
+					variant="secondary"
+					style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 8 }}
+					onPress={onSnooze} 
+				/>
 			</View>
 		</PressableScale>
 	);
@@ -225,105 +191,75 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 	content: {
-		padding: spacing.lg,
-		gap: spacing.lg,
-	},
-	hero: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.xl,
 		padding: spacing.xl,
-		gap: spacing.xs,
+		paddingBottom: 128,
+		gap: spacing.xl,
 	},
-	eyebrow: {
-		fontSize: 13,
-		lineHeight: 18,
-		fontWeight: "800",
-		textTransform: "uppercase",
-	},
-	title: {
-		fontSize: 30,
-		lineHeight: 36,
-		fontWeight: "900",
-	},
-	subtitle: {
-		fontSize: 15,
-		lineHeight: 22,
+	pageTitle: {
+		fontFamily: "Nunito_900Black",
+		fontSize: 32,
+		marginBottom: 8,
 	},
 	emptyCard: {
 		borderWidth: thickness.border,
 		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.lg,
-		padding: spacing.lg,
-		gap: spacing.xs,
+		borderRadius: radius.xl,
+		padding: spacing.xl,
+		gap: spacing.sm,
 	},
 	emptyTitle: {
+		fontFamily: "Nunito_800ExtraBold",
 		fontSize: 20,
-		lineHeight: 26,
-		fontWeight: "800",
 	},
 	emptyBody: {
-		fontSize: 14,
-		lineHeight: 20,
+		fontFamily: "Nunito_700Bold",
+		fontSize: 16,
 	},
 	grid: {
 		flexDirection: "row",
 		flexWrap: "wrap",
-		gap: spacing.sm,
+		gap: spacing.md,
 	},
 	tile: {
 		borderWidth: thickness.border,
 		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.lg,
-		padding: spacing.md,
+		borderRadius: radius.xl,
+		padding: spacing.lg,
 		gap: spacing.sm,
 	},
 	tileHeader: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
+		marginBottom: spacing.xs,
 	},
 	badge: {
-		fontSize: 12,
-		lineHeight: 16,
-		fontWeight: "800",
+		fontFamily: "Nunito_900Black",
+		fontSize: 14,
 		textTransform: "uppercase",
 	},
 	badgeMuted: {
-		fontSize: 12,
-		lineHeight: 16,
-		fontWeight: "700",
+		fontFamily: "Nunito_700Bold",
+		fontSize: 14,
 	},
 	tileTitle: {
-		fontSize: 18,
-		lineHeight: 22,
-		fontWeight: "800",
+		fontFamily: "Nunito_800ExtraBold",
+		fontSize: 20,
+		marginBottom: -2,
 	},
 	tileMeta: {
-		fontSize: 12,
-		lineHeight: 16,
-		fontWeight: "700",
+		fontFamily: "Nunito_700Bold",
+		fontSize: 14,
 	},
 	tileBody: {
-		fontSize: 13,
-		lineHeight: 18,
+		fontFamily: "Nunito_600SemiBold",
+		fontSize: 15,
+		marginVertical: spacing.xs,
 	},
 	tileActions: {
 		flexDirection: "row",
 		flexWrap: "wrap",
-		gap: spacing.xs,
-	},
-	smallButton: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3DSmall,
-		borderRadius: 999,
-		paddingHorizontal: 12,
-		paddingVertical: 10,
-	},
-	smallLabel: {
-		fontSize: 12,
-		lineHeight: 16,
-		fontWeight: "800",
-		textTransform: "uppercase",
+		gap: spacing.sm,
+		marginTop: spacing.xs,
 	},
 });

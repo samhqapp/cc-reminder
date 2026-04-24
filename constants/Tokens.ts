@@ -8,16 +8,17 @@ export const spacing = {
 } as const;
 
 export const radius = {
-	sm: 18,
-	md: 24,
-	lg: 32,
-	xl: 40,
+	sm: 12,
+	md: 16,
+	lg: 20,
+	xl: 24,
+	pill: 999,
 } as const;
 
 export const thickness = {
 	border: 2,
-	border3D: 6,
-	border3DSmall: 4,
+	border3D: 4,
+	border3DSmall: 3,
 } as const;
 
 export const motion = {

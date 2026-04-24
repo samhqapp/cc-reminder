@@ -5,8 +5,9 @@ import { useColorScheme } from "@/components/useColorScheme";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { TextField } from "@/components/ui/TextField";
+import { Button } from "@/components/ui/Button";
 import Colors from "@/constants/Colors";
-import { radius, spacing } from "@/constants/Tokens";
+import { radius, spacing, thickness } from "@/constants/Tokens";
 import {
 	findCompanyPreset,
 	searchCompanyPresets,
@@ -66,26 +67,16 @@ export function AddCardSheet({
 			subtitle="Quick setup for subscription reminders and cancellation notes."
 			onClose={onClose}
 			footer={
-				<>
+				<View style={styles.footerWrap}>
 					{error ? (
 						<Text style={[styles.error, { color: palette.danger }]}>{error}</Text>
 					) : null}
-					<PressableScale
+					<Button
+						title={isSaving ? "Saving..." : "Save card"}
 						onPress={() => void handleSave()}
 						disabled={isSaving}
-						contentStyle={[
-							styles.saveButton,
-							{
-								backgroundColor: palette.primary,
-								borderColor: palette.primary,
-							},
-						]}
-					>
-						<Text style={[styles.saveLabel, { color: palette.onPrimary }]}>
-							{isSaving ? "Saving..." : "Save card"}
-						</Text>
-					</PressableScale>
-				</>
+					/>
+				</View>
 			}
 		>
 			<ScrollView
@@ -223,8 +214,11 @@ const styles = StyleSheet.create({
 		maxHeight: 520,
 	},
 	content: {
-		gap: spacing.md,
+		gap: spacing.lg,
 		paddingBottom: spacing.xs,
+	},
+	footerWrap: {
+		gap: spacing.sm,
 	},
 	row: {
 		flexDirection: "row",
@@ -237,26 +231,27 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		flexWrap: "wrap",
 		gap: spacing.xs,
-		marginTop: -spacing.xs,
+		marginTop: -spacing.md,
 	},
 	suggestionChip: {
-		borderWidth: 1,
-		borderRadius: 999,
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3DSmall,
+		borderRadius: radius.pill,
 		paddingHorizontal: spacing.md,
 		paddingVertical: 10,
 	},
 	suggestionLabel: {
-		fontSize: 13,
-		lineHeight: 18,
-		fontWeight: "700",
-	},
-	segmentWrap: {
-		gap: spacing.xs,
-	},
-	segmentTitle: {
+		fontFamily: "Nunito_800ExtraBold",
 		fontSize: 14,
 		lineHeight: 18,
-		fontWeight: "700",
+	},
+	segmentWrap: {
+		gap: 6,
+	},
+	segmentTitle: {
+		fontFamily: "Nunito_800ExtraBold",
+		fontSize: 14,
+		lineHeight: 18,
 	},
 	segmentRow: {
 		flexDirection: "row",
@@ -271,24 +266,15 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 	},
 	segmentLabel: {
+		fontFamily: "Nunito_900Black",
 		fontSize: 14,
 		lineHeight: 18,
-		fontWeight: "800",
-	},
-	saveButton: {
-		borderWidth: 1,
-		borderRadius: radius.lg,
-		paddingVertical: 16,
-		alignItems: "center",
-	},
-	saveLabel: {
-		fontSize: 16,
-		lineHeight: 20,
-		fontWeight: "800",
+		textTransform: "uppercase",
 	},
 	error: {
+		fontFamily: "Nunito_700Bold",
 		fontSize: 13,
 		lineHeight: 18,
-		fontWeight: "600",
+		textAlign: "center",
 	},
 });

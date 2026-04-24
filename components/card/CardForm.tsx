@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { PressableScale } from "@/components/ui/PressableScale";
-import { TextField } from "@/components/ui/TextField";
 import { useColorScheme } from "@/components/useColorScheme";
+import { Button } from "@/components/ui/Button";
+import { TextField } from "@/components/ui/TextField";
 import Colors from "@/constants/Colors";
-import { radius, spacing } from "@/constants/Tokens";
+import { radius, spacing, thickness } from "@/constants/Tokens";
 import { providerTemplates } from "@/data/providerTemplates";
 import type { CardDraft } from "@/types/domain";
 
@@ -59,11 +59,12 @@ export function CardForm({
 		<ScrollView
 			style={{ backgroundColor: palette.background }}
 			contentContainerStyle={styles.content}
+			showsVerticalScrollIndicator={false}
 		>
 			<View
 				style={[
 					styles.section,
-					{ backgroundColor: palette.card, borderColor: palette.border },
+					{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
 				]}
 			>
 				<Text style={[styles.title, { color: palette.text }]}>{title}</Text>
@@ -75,7 +76,7 @@ export function CardForm({
 			<View
 				style={[
 					styles.section,
-					{ backgroundColor: palette.card, borderColor: palette.border },
+					{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
 				]}
 			>
 				<TextField
@@ -131,41 +132,29 @@ export function CardForm({
 			<View
 				style={[
 					styles.section,
-					{ backgroundColor: palette.card, borderColor: palette.border },
+					{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
 				]}
 			>
 				<Text style={[styles.sectionTitle, { color: palette.text }]}>
 					Preferences
 				</Text>
-				<PressableScale
+				<Button
+					title={`Notifications: ${draft.notificationsEnabled ? "on" : "off"}`}
+					variant="secondary"
 					onPress={() =>
 						update({ notificationsEnabled: !draft.notificationsEnabled })
 					}
-					contentStyle={[
-						styles.button,
-						{ backgroundColor: palette.cardAlt, borderColor: palette.border },
-					]}
-				>
-					<Text style={[styles.buttonLabel, { color: palette.text }]}>
-						Notifications: {draft.notificationsEnabled ? "on" : "off"}
-					</Text>
-				</PressableScale>
+				/>
 				<Text style={[styles.helper, { color: palette.muted }]}>
 					If device permission is denied, reminders still appear in-app.
 				</Text>
-				<PressableScale
+				<Button
+					title={`Extended tracking: ${draft.extendedTrackingEnabled ? "on" : "off"}`}
+					variant="secondary"
 					onPress={() =>
 						update({ extendedTrackingEnabled: !draft.extendedTrackingEnabled })
 					}
-					contentStyle={[
-						styles.button,
-						{ backgroundColor: palette.cardAlt, borderColor: palette.border },
-					]}
-				>
-					<Text style={[styles.buttonLabel, { color: palette.text }]}>
-						Extended tracking: {draft.extendedTrackingEnabled ? "on" : "off"}
-					</Text>
-				</PressableScale>
+				/>
 				<Text style={[styles.helper, { color: palette.muted }]}>
 					Keep this off unless you want to manage a manual follow-up window
 					yourself.
@@ -175,7 +164,7 @@ export function CardForm({
 			<View
 				style={[
 					styles.section,
-					{ backgroundColor: palette.card, borderColor: palette.border },
+					{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
 				]}
 			>
 				<Text style={[styles.sectionTitle, { color: palette.text }]}>
@@ -185,8 +174,10 @@ export function CardForm({
 					Only Amex is included in v1. It is advisory only.
 				</Text>
 				{providerTemplates.map((item) => (
-					<PressableScale
+					<Button
 						key={item.id}
+						title={`${draft.providerTemplateId === item.id ? "Using" : "Use"} ${item.provider} template`}
+						variant={draft.providerTemplateId === item.id ? "primary" : "secondary"}
 						onPress={() =>
 							update({
 								provider: item.provider,
@@ -195,16 +186,7 @@ export function CardForm({
 								paidAmountNote: item.hint,
 							})
 						}
-						contentStyle={[
-							styles.button,
-							{ backgroundColor: palette.cardAlt, borderColor: palette.border },
-						]}
-					>
-						<Text style={[styles.buttonLabel, { color: palette.text }]}>
-							{draft.providerTemplateId === item.id ? "Using" : "Use"}{" "}
-							{item.provider} template
-						</Text>
-					</PressableScale>
+					/>
 				))}
 				{template ? (
 					<View
@@ -219,7 +201,7 @@ export function CardForm({
 						<Text style={[styles.helper, { color: palette.muted }]}>
 							{template.hint}
 						</Text>
-						<Text style={[styles.helper, { color: palette.warning }]}>
+						<Text style={[styles.warning, { color: palette.warning }]}>
 							{template.disclaimer}
 						</Text>
 					</View>
@@ -230,7 +212,7 @@ export function CardForm({
 				<View
 					style={[
 						styles.section,
-						{ backgroundColor: palette.card, borderColor: palette.border },
+						{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
 					]}
 				>
 					<Text style={[styles.sectionTitle, { color: palette.text }]}>
@@ -251,20 +233,13 @@ export function CardForm({
 						multiline
 						minHeight={96}
 					/>
-					<PressableScale
+					<Button
+						title={`Extended tracking acknowledgment: ${draft.acknowledgmentAccepted ? "accepted" : "not accepted"}`}
+						variant={draft.acknowledgmentAccepted ? "success" : "secondary"}
 						onPress={() =>
 							update({ acknowledgmentAccepted: !draft.acknowledgmentAccepted })
 						}
-						contentStyle={[
-							styles.button,
-							{ backgroundColor: palette.cardAlt, borderColor: palette.border },
-						]}
-					>
-						<Text style={[styles.buttonLabel, { color: palette.text }]}>
-							Extended tracking acknowledgment:{" "}
-							{draft.acknowledgmentAccepted ? "accepted" : "not accepted"}
-						</Text>
-					</PressableScale>
+					/>
 					<Text style={[styles.warning, { color: palette.text }]}>
 						{EXTENDED_TRACKING_WARNING}
 					</Text>
@@ -278,90 +253,76 @@ export function CardForm({
 				<Text style={[styles.error, { color: palette.danger }]}>{error}</Text>
 			) : null}
 
-			<PressableScale
-				onPress={() => void handleSubmit()}
-				disabled={isSaving}
-				contentStyle={[
-					styles.button,
-					{ backgroundColor: palette.cardAlt, borderColor: palette.border },
-				]}
-			>
-				<Text style={[styles.buttonLabel, { color: palette.text }]}>
-					{isSaving ? "Saving..." : submitLabel}
-				</Text>
-			</PressableScale>
+			<View style={styles.actions}>
+				<Button
+					title={isSaving ? "Saving..." : submitLabel}
+					variant="primary"
+					onPress={() => void handleSubmit()}
+					disabled={isSaving}
+					style={{ flex: 1 }}
+				/>
 
-			{onDelete ? (
-				<PressableScale
-					onPress={() => void onDelete()}
-					contentStyle={[
-						styles.button,
-						{ backgroundColor: palette.cardAlt, borderColor: palette.border },
-					]}
-				>
-					<Text style={[styles.buttonLabel, { color: palette.danger }]}>
-						Delete card
-					</Text>
-				</PressableScale>
-			) : null}
+				{onDelete ? (
+					<Button
+						title="Delete card"
+						variant="danger"
+						onPress={() => void onDelete()}
+					/>
+				) : null}
+			</View>
 		</ScrollView>
 	);
 }
 
 const styles = StyleSheet.create({
 	content: {
-		padding: spacing.lg,
-		gap: spacing.md,
+		padding: spacing.xl,
+		gap: spacing.lg,
+		paddingBottom: 120,
 	},
 	section: {
-		borderWidth: 1,
-		borderRadius: radius.sm,
-		padding: spacing.md,
-		gap: 8,
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3D,
+		borderRadius: radius.xl,
+		padding: spacing.xl,
+		gap: spacing.md,
 	},
 	subSection: {
-		borderWidth: 1,
-		borderRadius: radius.sm,
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3D,
+		borderRadius: radius.lg,
 		padding: spacing.md,
 		gap: 8,
 	},
 	title: {
-		fontFamily: "SpaceMono",
-		fontSize: 20,
-		lineHeight: 28,
-		textTransform: "uppercase",
+		fontFamily: "Nunito_900Black",
+		fontSize: 24,
+		lineHeight: 30,
 	},
 	sectionTitle: {
-		fontFamily: "SpaceMono",
-		fontSize: 16,
-		lineHeight: 22,
-		textTransform: "uppercase",
+		fontFamily: "Nunito_800ExtraBold",
+		fontSize: 18,
+		lineHeight: 24,
 	},
 	helper: {
-		fontFamily: "SpaceMono",
-		fontSize: 13,
-		lineHeight: 21,
-	},
-	warning: {
-		fontFamily: "SpaceMono",
-		fontSize: 13,
-		lineHeight: 21,
-	},
-	button: {
-		borderWidth: 2,
-		borderRadius: radius.sm,
-		paddingVertical: 12,
-		paddingHorizontal: 12,
-	},
-	buttonLabel: {
-		fontFamily: "SpaceMono",
-		fontSize: 14,
-		lineHeight: 20,
-		textTransform: "uppercase",
-	},
-	error: {
-		fontFamily: "SpaceMono",
+		fontFamily: "Nunito_600SemiBold",
 		fontSize: 14,
 		lineHeight: 22,
+	},
+	warning: {
+		fontFamily: "Nunito_700Bold",
+		fontSize: 14,
+		lineHeight: 22,
+	},
+	actions: {
+		flexDirection: "row",
+		gap: spacing.sm,
+		marginTop: spacing.md,
+	},
+	error: {
+		fontFamily: "Nunito_700Bold",
+		fontSize: 14,
+		lineHeight: 22,
+		textAlign: "center",
 	},
 });

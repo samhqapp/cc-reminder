@@ -3,7 +3,7 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { radius, spacing } from "@/constants/Tokens";
+import { radius, spacing, thickness } from "@/constants/Tokens";
 
 type Props = TextInputProps & {
 	label: string;
@@ -27,8 +27,8 @@ export function TextField({ label, hint, minHeight, style, ...props }: Props) {
 						color: palette.text,
 						backgroundColor: palette.cardAlt,
 						borderColor: palette.borderSoft,
-						minHeight,
 					},
+					minHeight ? { minHeight } : undefined,
 					style,
 				]}
 			/>
@@ -44,19 +44,21 @@ const styles = StyleSheet.create({
 		gap: 6,
 	},
 	label: {
-		fontSize: 13,
+		fontFamily: "Nunito_800ExtraBold",
+		fontSize: 14,
 		lineHeight: 18,
-		fontWeight: "700",
 	},
 	input: {
-		borderWidth: 1,
-		borderRadius: radius.sm,
+		fontFamily: "Nunito_700Bold",
+		borderWidth: thickness.border,
+		borderRadius: radius.md,
 		paddingHorizontal: spacing.md,
 		paddingVertical: 14,
 		fontSize: 16,
 		lineHeight: 22,
 	},
 	hint: {
+		fontFamily: "Nunito_600SemiBold",
 		fontSize: 12,
 		lineHeight: 18,
 	},

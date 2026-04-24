@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { Text } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
+import { radius, spacing, thickness } from "@/constants/Tokens";
 
 const sections = [
 	{
@@ -33,14 +34,15 @@ export default function ModalScreen() {
 			<ScrollView
 				style={{ backgroundColor: palette.background }}
 				contentContainerStyle={styles.content}
+				showsVerticalScrollIndicator={false}
 			>
 				<View
 					style={[
 						styles.hero,
-						{ backgroundColor: palette.card, borderColor: palette.border },
+						{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
 					]}
 				>
-					<Text style={[styles.kicker, { color: palette.accent }]}>
+					<Text style={[styles.kicker, { color: palette.primary }]}>
 						About CC Reminder
 					</Text>
 					<Text style={[styles.title, { color: palette.text }]}>
@@ -57,7 +59,7 @@ export default function ModalScreen() {
 						key={section.title}
 						style={[
 							styles.section,
-							{ backgroundColor: palette.card, borderColor: palette.border },
+							{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
 						]}
 					>
 						<Text style={[styles.sectionTitle, { color: palette.text }]}>
@@ -76,47 +78,47 @@ export default function ModalScreen() {
 
 const styles = StyleSheet.create({
 	content: {
-		padding: 20,
-		gap: 16,
+		padding: spacing.xl,
+		gap: spacing.lg,
 	},
 	hero: {
-		borderWidth: 2,
-		borderRadius: 0,
-		padding: 22,
-		gap: 10,
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3D,
+		borderRadius: radius.xl,
+		padding: spacing.xl,
+		gap: spacing.sm,
 	},
 	kicker: {
-		fontFamily: "SpaceMono",
-		fontSize: 12,
+		fontFamily: "Nunito_800ExtraBold",
+		fontSize: 14,
 		textTransform: "uppercase",
 		letterSpacing: 1,
 	},
 	title: {
-		fontFamily: "SpaceMono",
+		fontFamily: "Nunito_900Black",
 		fontSize: 28,
 		lineHeight: 34,
-		textTransform: "uppercase",
 	},
 	subtitle: {
-		fontFamily: "SpaceMono",
-		fontSize: 15,
+		fontFamily: "Nunito_700Bold",
+		fontSize: 16,
 		lineHeight: 22,
 	},
 	section: {
-		borderWidth: 2,
-		borderRadius: 0,
-		padding: 18,
-		gap: 8,
+		borderWidth: thickness.border,
+		borderBottomWidth: thickness.border3D,
+		borderRadius: radius.lg,
+		padding: spacing.lg,
+		gap: spacing.xs,
 	},
 	sectionTitle: {
-		fontFamily: "SpaceMono",
-		fontSize: 17,
+		fontFamily: "Nunito_800ExtraBold",
+		fontSize: 18,
 		lineHeight: 24,
-		textTransform: "uppercase",
 	},
 	sectionBody: {
-		fontFamily: "SpaceMono",
-		fontSize: 14,
-		lineHeight: 21,
+		fontFamily: "Nunito_600SemiBold",
+		fontSize: 15,
+		lineHeight: 22,
 	},
 });

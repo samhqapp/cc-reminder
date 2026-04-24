@@ -4,14 +4,23 @@ import {
 	DefaultTheme,
 	ThemeProvider,
 } from "@react-navigation/native";
-import { useFonts } from "expo-font";
+import {
+	useFonts,
+	Nunito_400Regular,
+	Nunito_600SemiBold,
+	Nunito_700Bold,
+	Nunito_800ExtraBold,
+	Nunito_900Black,
+} from "@expo-google-fonts/nunito";
 import * as Notifications from "expo-notifications";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { View } from "react-native";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/components/useColorScheme";
+import Colors from "@/constants/Colors";
 import { CardsProvider } from "@/hooks/useCards";
 import { OnboardingProvider, useOnboarding } from "@/hooks/useOnboarding";
 
@@ -39,6 +48,11 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
 	const [loaded, error] = useFonts({
+		Nunito_400Regular,
+		Nunito_600SemiBold,
+		Nunito_700Bold,
+		Nunito_800ExtraBold,
+		Nunito_900Black,
 		SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
 		...FontAwesome.font,
 	});
@@ -80,7 +94,8 @@ function RootLayoutContent({
 }
 
 function RootLayoutNav() {
-	const colorScheme = useColorScheme();
+	const colorScheme = useColorScheme() ?? "light";
+	const palette = Colors[colorScheme];
 	const router = useRouter();
 	const segments = useSegments();
 	const { hasCompletedOnboarding, isReady } = useOnboarding();
@@ -111,32 +126,43 @@ function RootLayoutNav() {
 
 	return (
 		<ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-			<Stack
-				screenOptions={{
-					headerStyle: {
-						backgroundColor:
-							colorScheme === "dark" ? "#121212" : "#f3f1eb",
-					},
-					headerShadowVisible: false,
-					headerTitleStyle: {
-						fontFamily: "SpaceMono",
-						fontSize: 16,
-					},
-				}}
-			>
-				<Stack.Screen name="index" options={{ headerShown: false }} />
-				<Stack.Screen name="onboarding" options={{ headerShown: false }} />
-				<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-				<Stack.Screen
-					name="card/new"
-					options={{ presentation: "modal", title: "New Card" }}
-				/>
-				<Stack.Screen name="card/[id]" options={{ title: "Card Details" }} />
-				<Stack.Screen
-					name="modal"
-					options={{ presentation: "modal", title: "About CC Reminder" }}
-				/>
-			</Stack>
+			<View style={{ flex: 1, backgroundColor: palette.background }}>
+				<View
+					style={{
+						flex: 1,
+						width: "100%",
+						maxWidth: 480,
+						alignSelf: "center",
+						backgroundColor: palette.background,
+					}}
+				>
+					<Stack
+						screenOptions={{
+							headerStyle: {
+								backgroundColor: palette.background,
+							},
+							headerShadowVisible: false,
+							headerTitleStyle: {
+								fontFamily: "Nunito_800ExtraBold",
+								fontSize: 18,
+							},
+						}}
+					>
+						<Stack.Screen name="index" options={{ headerShown: false }} />
+						<Stack.Screen name="onboarding" options={{ headerShown: false }} />
+						<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+						<Stack.Screen
+							name="card/new"
+							options={{ presentation: "modal", title: "New Card" }}
+						/>
+						<Stack.Screen name="card/[id]" options={{ title: "Card Details" }} />
+						<Stack.Screen
+							name="modal"
+							options={{ presentation: "modal", title: "About CC Reminder" }}
+						/>
+					</Stack>
+				</View>
+			</View>
 		</ThemeProvider>
 	);
 }

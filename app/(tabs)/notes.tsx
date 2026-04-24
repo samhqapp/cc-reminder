@@ -152,32 +152,102 @@ export default function NotesScreen() {
 							<Text style={[styles.tileTitle, { color: palette.text }]}>
 								{item.title}
 							</Text>
-							<Text style={[styles.tileMeta, { color: palette.muted }]}>
-								{item.meta}
+							<Text style={[styles.emptyTitle, { color: palette.text }]}>
+								No notes saved
 							</Text>
-							<Text style={[styles.tileBody, { color: palette.text }]}>
-								{item.body}
+							<Text style={[styles.emptyBody, { color: palette.muted }]}>
+								Add notes to your cards to keep track of cancellation links, phone numbers, and support context.
 							</Text>
-							{item.deletable ? (
-								<PressableScale
-									onPress={() => void deleteNote(item.id)}
-									contentStyle={[
-										styles.secondaryButton,
+						</View>
+					) : null}
+
+					<View style={styles.list}>
+						{activeCards.map((card) => {
+							const companyTheme = findCompanyPreset(
+								card.provider,
+								card.companyKey,
+							);
+							const editingThis = isEditing && activeCardId === card.id;
+
+							return (
+								<View
+									key={card.id}
+									style={[
+										styles.card,
 										{
-											backgroundColor: palette.cardAlt,
-											borderColor: palette.borderSoft,
+											backgroundColor: palette.card,
+											borderColor: palette.border,
+											borderBottomColor: palette.border3D,
 										},
 									]}
 								>
-									<Text style={[styles.secondaryLabel, { color: palette.text }]}>
-										Delete
-									</Text>
-								</PressableScale>
-							) : null}
-						</View>
-					))}
-				</View>
-			</ScrollView>
+									<View style={styles.cardHeader}>
+										<View
+											style={[
+												styles.logoBadge,
+												{ backgroundColor: companyTheme?.accent ?? palette.primary },
+											]}
+										>
+											<Text style={[styles.logoLabel, { color: palette.onPrimary }]}>
+												{card.provider.slice(0, 2).toUpperCase()}
+											</Text>
+										</View>
+										<View style={styles.cardTextGroup}>
+											<Text style={[styles.cardTitle, { color: palette.text }]}>
+												{card.name}
+											</Text>
+											<Text style={[styles.cardMeta, { color: palette.muted }]}>
+												{card.provider}
+											</Text>
+										</View>
+									</View>
+
+									{editingThis ? (
+										<View style={styles.editorWrap}>
+											<TextField
+												label="Edit Note"
+												value={draftNote}
+												onChangeText={setDraftNote}
+												multiline
+												minHeight={120}
+												autoFocus
+											/>
+											<View style={styles.editorActions}>
+												<Button 
+													title="Cancel" 
+													variant="secondary"
+													style={{ flex: 1 }}
+													onPress={handleCancel} 
+												/>
+												<Button 
+													title="Save Note" 
+													variant="success"
+													style={{ flex: 1 }}
+													onPress={() => void handleSave()} 
+												/>
+											</View>
+										</View>
+									) : (
+										<>
+											<Text style={[styles.noteContent, { color: palette.text }]}>
+												{card.note}
+											</Text>
+											<View style={styles.actions}>
+												<Button 
+													title="Edit Note" 
+													variant="secondary"
+													style={{ flex: 1 }}
+													onPress={() => handleStartEdit(card)} 
+												/>
+											</View>
+										</>
+									)}
+								</View>
+							);
+						})}
+					</View>
+				</ScrollView>
+			</KeyboardAvoidingView>
 		</SafeAreaView>
 	);
 }
@@ -186,67 +256,29 @@ const styles = StyleSheet.create({
 	safeArea: {
 		flex: 1,
 	},
+	keyboardView: {
+		flex: 1,
+	},
 	content: {
-		padding: spacing.lg,
-		gap: spacing.lg,
-	},
-	hero: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.xl,
 		padding: spacing.xl,
-		gap: spacing.xs,
+		paddingBottom: 128,
+		gap: spacing.xl,
 	},
-	eyebrow: {
-		fontSize: 13,
-		lineHeight: 18,
-		fontWeight: "800",
-		textTransform: "uppercase",
-	},
-	title: {
-		fontSize: 30,
-		lineHeight: 36,
-		fontWeight: "900",
-	},
-	subtitle: {
-		fontSize: 15,
-		lineHeight: 22,
-	},
-	composer: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.lg,
-		padding: spacing.md,
-		gap: spacing.md,
-	},
-	primaryButton: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.lg,
-		paddingVertical: 16,
-		alignItems: "center",
-	},
-	primaryLabel: {
-		fontSize: 15,
-		lineHeight: 20,
-		fontWeight: "800",
-	},
-	loading: {
-		fontSize: 14,
-		lineHeight: 20,
-		fontWeight: "600",
+	pageTitle: {
+		fontFamily: "Nunito_900Black",
+		fontSize: 32,
+		marginBottom: 8,
 	},
 	emptyCard: {
 		borderWidth: thickness.border,
 		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.lg,
-		padding: spacing.lg,
-		gap: spacing.xs,
+		borderRadius: radius.xl,
+		padding: spacing.xl,
+		gap: spacing.sm,
 	},
 	emptyTitle: {
+		fontFamily: "Nunito_800ExtraBold",
 		fontSize: 20,
-		lineHeight: 26,
-		fontWeight: "800",
 	},
 	emptyBody: {
 		fontSize: 14,
