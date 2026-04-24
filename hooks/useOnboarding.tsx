@@ -4,6 +4,12 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 import { storageKeys } from "@/utils/storage";
 
+// ─── Dev flag ────────────────────────────────────────────────────────────────
+// Set to true during development to always show onboarding on reload.
+// Flip to false (or remove) before shipping.
+const DEV_FORCE_ONBOARDING = __DEV__;
+// ─────────────────────────────────────────────────────────────────────────────
+
 type OnboardingContextValue = {
 	hasCompletedOnboarding: boolean;
 	isReady: boolean;
@@ -20,6 +26,15 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
 		let isMounted = true;
 
 		async function hydrate() {
+			if (DEV_FORCE_ONBOARDING) {
+				// Always show onboarding in dev, but don't clear real storage
+				if (isMounted) {
+					setHasCompletedOnboarding(false);
+					setIsReady(true);
+				}
+				return;
+			}
+
 			const value = await AsyncStorage.getItem(storageKeys.onboardingComplete);
 
 			if (!isMounted) {

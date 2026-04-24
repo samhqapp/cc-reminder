@@ -10,7 +10,7 @@ async function notificationsAvailable(): Promise<boolean> {
 		return false;
 	}
 	try {
-		return await (Notifications as any).isAvailableAsync();
+		return await Notifications.isAvailableAsync();
 	} catch {
 		return false;
 	}

@@ -146,6 +146,8 @@ function RootLayoutNav() {
 								fontFamily: "Nunito_800ExtraBold",
 								fontSize: 18,
 							},
+							animation: "slide_from_right",
+							animationDuration: 220,
 						}}
 					>
 						<Stack.Screen name="index" options={{ headerShown: false }} />

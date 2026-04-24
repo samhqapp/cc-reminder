@@ -154,19 +154,12 @@ export function AddCardSheet({
 					</View>
 				</View>
 				<TextField
-					label="Group"
-					value={draft.groupName}
-					onChangeText={(value) => update({ groupName: value })}
-					placeholder="Streaming"
-					hint="Optional section label for the cards list."
-				/>
-				<TextField
 					label="Note"
 					value={draft.note}
 					onChangeText={(value) => update({ note: value })}
-					placeholder="Reminder copy, cancellation window, support link, or follow-up note."
+					placeholder="Cancellation link, phone, or reminder note."
 					multiline
-					minHeight={112}
+					minHeight={96}
 				/>
 			</ScrollView>
 		</BottomSheet>

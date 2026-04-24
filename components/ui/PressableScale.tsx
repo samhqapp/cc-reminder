@@ -4,8 +4,10 @@ import { Pressable } from "react-native";
 import Animated, {
 	useAnimatedStyle,
 	useSharedValue,
-	withSpring,
+	withTiming,
 } from "react-native-reanimated";
+
+import { motion } from "@/constants/Tokens";
 
 type Props = Omit<PressableProps, "children" | "style"> & {
 	children?: ReactNode;
@@ -13,45 +15,41 @@ type Props = Omit<PressableProps, "children" | "style"> & {
 	haptic?: boolean;
 };
 
-const SPRING = { damping: 15, stiffness: 400, mass: 0.6 };
-
 export function PressableScale({
 	children,
 	contentStyle,
 	disabled,
-	onPress,
-	onLongPress,
+	onPressIn,
+	onPressOut,
 	...rest
 }: Props) {
-	const scale = useSharedValue(1);
-	const translateY = useSharedValue(0);
+	const pressed = useSharedValue(0);
 
-	const animStyle = useAnimatedStyle(() => ({
-		transform: [{ scale: scale.value }, { translateY: translateY.value }],
-		opacity: disabled ? 0.5 : 1,
+	const animatedStyle = useAnimatedStyle(() => ({
+		transform: [
+			{ scale: withTiming(pressed.value ? 0.97 : 1, { duration: motion.fast }) },
+			{ translateY: withTiming(pressed.value ? 3 : 0, { duration: motion.fast }) },
+		],
+		opacity: withTiming(pressed.value && disabled ? 0.5 : disabled ? 0.5 : 1, {
+			duration: motion.fast,
+		}),
 	}));
-
-	function handlePressIn() {
-		scale.value = withSpring(0.96, SPRING);
-		translateY.value = withSpring(3, SPRING);
-	}
-
-	function handlePressOut() {
-		scale.value = withSpring(1, SPRING);
-		translateY.value = withSpring(0, SPRING);
-	}
 
 	return (
 		<Pressable
 			{...rest}
-			onPress={onPress}
-			onLongPress={onLongPress}
 			disabled={disabled}
-			onPressIn={handlePressIn}
-			onPressOut={handlePressOut}
+			onPressIn={(e) => {
+				pressed.value = 1;
+				onPressIn?.(e);
+			}}
+			onPressOut={(e) => {
+				pressed.value = 0;
+				onPressOut?.(e);
+			}}
 			style={{ alignSelf: "stretch" }}
 		>
-			<Animated.View style={[animStyle, contentStyle]}>
+			<Animated.View style={[contentStyle, animatedStyle]}>
 				{children}
 			</Animated.View>
 		</Pressable>

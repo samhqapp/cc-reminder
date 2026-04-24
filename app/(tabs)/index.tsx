@@ -1,7 +1,8 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AddCardSheet } from "@/components/card/AddCardSheet";
 import { NoteSheet } from "@/components/card/NoteSheet";
@@ -24,7 +25,11 @@ export default function CardsScreen() {
 	const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
 	const starterDraft = useMemo(() => defaultDraft(), [defaultDraft]);
-	const fabBottom = Math.max(insets.bottom, 8) + 12 + 64 + 16;
+
+	// Match the tab bar's bottom offset so FAB always floats above it
+	const TAB_HEIGHT = 64;
+	const tabBottom = insets.bottom + (Platform.OS === "android" ? 10 : 12);
+	const fabBottom = tabBottom + TAB_HEIGHT + 16;
 
 	return (
 		<SafeAreaView
@@ -161,9 +166,9 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 	content: {
-		padding: spacing.xl,
-		paddingBottom: 128,
-		gap: spacing.xl,
+		padding: spacing.lg,
+		paddingBottom: 120,
+		gap: spacing.lg,
 	},
 	pageTitle: {
 		fontFamily: "Nunito_900Black",
@@ -186,14 +191,14 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 	},
 	list: {
-		gap: spacing.lg,
+		gap: spacing.md,
 	},
 	card: {
 		borderWidth: thickness.border,
 		borderBottomWidth: thickness.border3D,
 		borderRadius: radius.xl,
-		padding: spacing.xl,
-		gap: spacing.lg,
+		padding: spacing.lg,
+		gap: spacing.md,
 	},
 	cardHeader: {
 		flexDirection: "row",
