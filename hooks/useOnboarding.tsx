@@ -7,7 +7,7 @@ import { storageKeys } from "@/utils/storage";
 // ─── Dev flag ────────────────────────────────────────────────────────────────
 // Set to true during development to always show onboarding on reload.
 // Flip to false (or remove) before shipping.
-const DEV_FORCE_ONBOARDING = __DEV__;
+const DEV_FORCE_ONBOARDING = false;
 // ─────────────────────────────────────────────────────────────────────────────
 
 type OnboardingContextValue = {

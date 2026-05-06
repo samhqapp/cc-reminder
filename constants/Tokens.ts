@@ -1,43 +1,89 @@
 export const spacing = {
+	xxs: 4,
 	xs: 8,
 	sm: 12,
 	md: 16,
-	lg: 20,
-	xl: 24,
-	xxl: 32,
+	lg: 24,
+	xl: 32,
+	xxl: 48,
 } as const;
 
 export const radius = {
-	sm: 12,
-	md: 16,
-	lg: 20,
-	xl: 24,
-	pill: 999,
+	xs: 2,
+	sm: 6,
+	md: 10,
+	lg: 12,
+	xl: 16,
+	pill: 9999,
 } as const;
 
-export const thickness = {
-	border: 2,
-	border3D: 4,
-	border3DSmall: 3,
-} as const;
+export const hairline = 1 as const;
 
 export const motion = {
-	fast: 140,
-	normal: 220,
-	slow: 320,
+	fast: 120,
+	normal: 200,
+	slow: 300,
 } as const;
 
-export const shadow = {
-	soft: {
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.1,
-		shadowRadius: 10,
-		elevation: 4,
+export const type = {
+	displayLg: {
+		fontSize: 32,
+		lineHeight: 38,
+		fontWeight: "500" as const,
+		letterSpacing: 0,
 	},
-	medium: {
-		shadowOffset: { width: 0, height: 8 },
-		shadowOpacity: 0.15,
-		shadowRadius: 16,
-		elevation: 8,
+	displayMd: {
+		fontSize: 26,
+		lineHeight: 32,
+		fontWeight: "400" as const,
+		letterSpacing: 0,
+	},
+	titleLg: {
+		fontSize: 22,
+		lineHeight: 30,
+		fontWeight: "400" as const,
+		letterSpacing: 0.12,
+	},
+	titleMd: {
+		fontSize: 18,
+		lineHeight: 26,
+		fontWeight: "500" as const,
+		letterSpacing: 0,
+	},
+	titleSm: {
+		fontSize: 16,
+		lineHeight: 22,
+		fontWeight: "500" as const,
+		letterSpacing: 0,
+	},
+	labelMd: {
+		fontSize: 15,
+		lineHeight: 21,
+		fontWeight: "500" as const,
+		letterSpacing: 0,
+	},
+	button: {
+		fontSize: 15,
+		lineHeight: 21,
+		fontWeight: "500" as const,
+		letterSpacing: 0.2,
+	},
+	body: {
+		fontSize: 14,
+		lineHeight: 20,
+		fontWeight: "400" as const,
+		letterSpacing: 0,
+	},
+	caption: {
+		fontSize: 13,
+		lineHeight: 18,
+		fontWeight: "500" as const,
+		letterSpacing: 0.16,
+	},
+	legal: {
+		fontSize: 12,
+		lineHeight: 16,
+		fontWeight: "400" as const,
+		letterSpacing: 0,
 	},
 } as const;

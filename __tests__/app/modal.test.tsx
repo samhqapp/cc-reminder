@@ -7,9 +7,9 @@ describe("ModalScreen", () => {
 		render(<ModalScreen />);
 
 		expect(screen.getByText("About CC Reminder")).toBeOnTheScreen();
-		expect(screen.getByText("Trust Boundary")).toBeOnTheScreen();
-		expect(screen.getByText("What It Never Stores")).toBeOnTheScreen();
-		expect(screen.getByText("Provider Templates")).toBeOnTheScreen();
-		expect(screen.getByText("Reminder Model")).toBeOnTheScreen();
+		expect(screen.getByText("Trust boundary")).toBeOnTheScreen();
+		expect(screen.getByText("What it never stores")).toBeOnTheScreen();
+		expect(screen.getByText("Provider templates")).toBeOnTheScreen();
+		expect(screen.getByText("Reminder model")).toBeOnTheScreen();
 	});
 });

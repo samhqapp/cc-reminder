@@ -10,7 +10,11 @@ async function notificationsAvailable(): Promise<boolean> {
 		return false;
 	}
 	try {
-		return await Notifications.isAvailableAsync();
+		const mod = Notifications as Record<string, unknown>;
+		if (typeof mod.isAvailableAsync === "function") {
+			return await (mod.isAvailableAsync as () => Promise<boolean>)();
+		}
+		return true;
 	} catch {
 		return false;
 	}

@@ -1,66 +1,61 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import {
-	ScrollView,
-	StyleSheet,
-	Text,
-	View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { PressableScale } from "@/components/ui/PressableScale";
-import Colors from "@/constants/Colors";
-import { radius, spacing, thickness } from "@/constants/Tokens";
+import Colors, { type AppPalette } from "@/constants/Colors";
+import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { requestNotificationPermission } from "@/utils/notifications";
 
-
-// ─── Mock UI helpers ──────────────────────────────────────────────────────────
+type Step = {
+	kicker: string;
+	title: string;
+	body: string;
+	surface: (palette: AppPalette) => string;
+	mockUI: (palette: AppPalette) => React.ReactNode;
+};
 
 function MockCard({
 	name,
 	provider,
 	last4,
 	dueLabel,
-	accent,
 	palette,
 }: {
 	name: string;
 	provider: string;
 	last4: string;
 	dueLabel: string;
-	accent: string;
-	palette: (typeof Colors)["light"];
+	palette: AppPalette;
 }) {
 	return (
 		<View
 			style={[
 				mockStyles.card,
-				{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
+				{ backgroundColor: palette.card, borderColor: palette.border },
 			]}
 		>
-			<View style={mockStyles.cardHeader}>
-				<View style={[mockStyles.logoBadge, { backgroundColor: accent }]}>
-					<Text style={[mockStyles.logoLabel, { color: "#fff" }]}>
-						{provider.slice(0, 2).toUpperCase()}
-					</Text>
-				</View>
+			<View style={mockStyles.cardRow}>
 				<View style={{ flex: 1 }}>
-					<Text style={[mockStyles.cardName, { color: palette.text }]}>{name}</Text>
+					<Text style={[mockStyles.cardName, { color: palette.text }]}>
+						{name}
+					</Text>
 					<Text style={[mockStyles.cardMeta, { color: palette.muted }]}>
 						{provider} · •••• {last4}
 					</Text>
 				</View>
-				<View style={[mockStyles.dueBadge, { backgroundColor: palette.primarySoft }]}>
-					<Text style={[mockStyles.dueLabel, { color: palette.primary }]}>{dueLabel}</Text>
-				</View>
+				<Text style={[mockStyles.dueBadge, { color: palette.body }]}>
+					{dueLabel}
+				</Text>
 			</View>
 		</View>
 	);
 }
 
-function MockReminderTile({
+function MockReminder({
 	name,
 	label,
 	tone,
@@ -69,36 +64,34 @@ function MockReminderTile({
 	name: string;
 	label: string;
 	tone: "danger" | "warning" | "success";
-	palette: (typeof Colors)["light"];
+	palette: AppPalette;
 }) {
-	const toneColor =
-		tone === "danger" ? palette.danger : tone === "warning" ? palette.warning : palette.success;
+	const tc =
+		tone === "danger"
+			? palette.danger
+			: tone === "warning"
+				? palette.warning
+				: palette.success;
 	return (
 		<View
 			style={[
 				mockStyles.reminder,
-				{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
+				{ backgroundColor: palette.card, borderColor: palette.border },
 			]}
 		>
-			<View style={mockStyles.reminderHeader}>
-				<Text style={[mockStyles.reminderBadge, { color: toneColor }]}>
-					{tone === "danger" ? "Overdue" : tone === "warning" ? "Due in 3 days" : "Upcoming"}
-				</Text>
-			</View>
-			<Text style={[mockStyles.reminderName, { color: palette.text }]}>{name}</Text>
-			<Text style={[mockStyles.reminderSub, { color: palette.muted }]}>{label}</Text>
-			<View style={mockStyles.intentRow}>
-				<View
-					style={[mockStyles.intentChip, { backgroundColor: palette.danger + "22", borderColor: palette.danger + "44" }]}
-				>
-					<Text style={[mockStyles.intentLabel, { color: palette.danger }]}>Cancel</Text>
-				</View>
-				<View
-					style={[mockStyles.intentChip, { backgroundColor: palette.success + "22", borderColor: palette.success + "44" }]}
-				>
-					<Text style={[mockStyles.intentLabel, { color: palette.success }]}>Keep</Text>
-				</View>
-			</View>
+			<Text style={[mockStyles.reminderBadge, { color: tc }]}>
+				{tone === "danger"
+					? "OVERDUE"
+					: tone === "warning"
+						? "DUE SOON"
+						: "UPCOMING"}
+			</Text>
+			<Text style={[mockStyles.reminderName, { color: palette.text }]}>
+				{name}
+			</Text>
+			<Text style={[mockStyles.reminderSub, { color: palette.muted }]}>
+				{label}
+			</Text>
 		</View>
 	);
 }
@@ -110,47 +103,43 @@ function MockNote({
 }: {
 	text: string;
 	from?: string;
-	palette: (typeof Colors)["light"];
+	palette: AppPalette;
 }) {
 	return (
 		<View
 			style={[
 				mockStyles.note,
-				{ backgroundColor: palette.card, borderColor: palette.borderSoft, borderBottomColor: palette.border3D },
+				{ backgroundColor: palette.card, borderColor: palette.border },
 			]}
 		>
 			{from ? (
-				<Text style={[mockStyles.noteFrom, { color: palette.primary }]}>{from}</Text>
+				<Text style={[mockStyles.noteFrom, { color: palette.link }]}>
+					{from}
+				</Text>
 			) : null}
-			<Text style={[mockStyles.noteText, { color: palette.text }]} numberOfLines={3}>
+			<Text
+				style={[mockStyles.noteText, { color: palette.body }]}
+				numberOfLines={3}
+			>
 				{text}
 			</Text>
 		</View>
 	);
 }
 
-// ─── Steps ────────────────────────────────────────────────────────────────────
-
-type Step = {
-	kicker: string;
-	title: string;
-	body: string;
-	mockUI: (palette: (typeof Colors)["light"]) => React.ReactNode;
-};
-
 const STEPS: Step[] = [
 	{
 		kicker: "Your cards",
 		title: "Track every\nrenewal date",
 		body: "Add a card once. The app calculates the next billing date automatically and reminds you before it hits.",
+		surface: (p) => p.cream,
 		mockUI: (palette) => (
-			<View style={{ gap: 10 }}>
+			<View style={{ gap: 8 }}>
 				<MockCard
 					name="Family plan"
 					provider="Netflix"
 					last4="4242"
 					dueLabel="3 days"
-					accent="#E50914"
 					palette={palette}
 				/>
 				<MockCard
@@ -158,7 +147,6 @@ const STEPS: Step[] = [
 					provider="Spotify"
 					last4="1337"
 					dueLabel="12 days"
-					accent="#1DB954"
 					palette={palette}
 				/>
 				<MockCard
@@ -166,7 +154,6 @@ const STEPS: Step[] = [
 					provider="Apple"
 					last4="8888"
 					dueLabel="Tomorrow"
-					accent="#555"
 					palette={palette}
 				/>
 			</View>
@@ -175,18 +162,19 @@ const STEPS: Step[] = [
 	{
 		kicker: "Reminders",
 		title: "Decide before\nyou're charged",
-		body: "See what's due, flip a card to Cancel or Keep, and mark it as Handled. Snooze if you need more time.",
+		body: "See what's due, flip a card to Cancel or Keep, and mark it as handled. Snooze if you need more time.",
+		surface: (p) => p.dangerSoft,
 		mockUI: (palette) => (
-			<View style={{ gap: 10 }}>
-				<MockReminderTile
-					name="Netflix · Family plan"
-					label="May 1 · ••••4242"
+			<View style={{ gap: 8 }}>
+				<MockReminder
+					name="Netflix, Family plan"
+					label="May 1 · •••• 4242"
 					tone="danger"
 					palette={palette}
 				/>
-				<MockReminderTile
-					name="Spotify · Premium"
-					label="May 10 · ••••1337"
+				<MockReminder
+					name="Spotify, Premium"
+					label="May 10 · •••• 1337"
 					tone="warning"
 					palette={palette}
 				/>
@@ -196,29 +184,23 @@ const STEPS: Step[] = [
 	{
 		kicker: "Notes",
 		title: "Capture the\ndetails that matter",
-		body: "Add quick notes or link them directly to a card — cancellation links, phone numbers, anything you'd need in the moment.",
+		body: "Add quick notes or link them to a card: cancellation links, phone numbers, anything you'd need in the moment.",
+		surface: (p) => p.successSoft,
 		mockUI: (palette) => (
-			<View style={{ gap: 10 }}>
+			<View style={{ gap: 8 }}>
 				<MockNote
 					from="Netflix"
-					text="Cancel via netflix.com/cancel — do NOT call support, takes 30 min"
+					text="Cancel via netflix.com/cancel. Do NOT call support, takes 30 min."
 					palette={palette}
 				/>
 				<MockNote
-					text="Remember to cancel Gym before 25th — they charge full month even mid-cycle"
-					palette={palette}
-				/>
-				<MockNote
-					from="Spotify"
-					text="Family plan — need to stay subscribed until June for concert tickets"
+					text="Cancel Gym before 25th. They charge full month even mid-cycle."
 					palette={palette}
 				/>
 			</View>
 		),
 	},
 ];
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function OnboardingScreen() {
 	const colorScheme = useColorScheme() ?? "light";
@@ -253,7 +235,9 @@ export default function OnboardingScreen() {
 	}
 
 	return (
-		<SafeAreaView style={[styles.safeArea, { backgroundColor: palette.background }]}>
+		<SafeAreaView
+			style={[styles.safeArea, { backgroundColor: palette.background }]}
+		>
 			{/* Progress dots */}
 			<View style={styles.dotsRow}>
 				{STEPS.map((_, i) => (
@@ -263,8 +247,8 @@ export default function OnboardingScreen() {
 							styles.dot,
 							{
 								backgroundColor:
-									i === step ? palette.primary : palette.borderSoft,
-								width: i === step ? 24 : 8,
+									i === step ? palette.primary : palette.border,
+								width: i === step ? 20 : 6,
 							},
 						]}
 					/>
@@ -275,45 +259,52 @@ export default function OnboardingScreen() {
 				contentContainerStyle={styles.scroll}
 				showsVerticalScrollIndicator={false}
 			>
-				{/* Header */}
 				<View style={styles.header}>
-					<Text style={[styles.kicker, { color: palette.primary }]}>
+					<Text style={[styles.kicker, { color: palette.link }]}>
 						{current.kicker}
 					</Text>
 					<Text style={[styles.title, { color: palette.text }]}>
 						{current.title}
 					</Text>
-					<Text style={[styles.body, { color: palette.muted }]}>
+					<Text style={[styles.body, { color: palette.body }]}>
 						{current.body}
 					</Text>
 				</View>
 
-				{/* Mock UI preview */}
 				<View
 					style={[
 						styles.preview,
-						{ backgroundColor: palette.cardAlt, borderColor: palette.borderSoft },
+						{
+							backgroundColor: current.surface(palette),
+							borderColor: palette.border,
+						},
 					]}
 				>
 					{current.mockUI(palette)}
 				</View>
 
-				{/* Privacy note on last step */}
 				{isLast ? (
-					<Text style={[styles.privacyNote, { color: palette.muted }]}>
-						📱 Everything stays on your device. No account required.
-					</Text>
+					<View style={[styles.trustBand, { borderColor: palette.border }]}>
+						<Text style={[styles.trustTitle, { color: palette.text }]}>
+							Your data stays on your device
+						</Text>
+						<Text style={[styles.trustBody, { color: palette.muted }]}>
+							Open source. Fully local. No account required. No logs shipped to
+							any server.
+						</Text>
+					</View>
 				) : null}
 			</ScrollView>
 
-			{/* Navigation */}
-			<View style={[styles.nav, { borderTopColor: palette.borderSoft }]}>
+			<View style={[styles.nav, { borderTopColor: palette.border }]}>
 				{step > 0 ? (
 					<PressableScale
 						onPress={goPrev}
-						contentStyle={[styles.backBtn, { borderColor: palette.borderSoft }]}
+						contentStyle={[styles.backBtn, { borderColor: palette.border }]}
 					>
-						<Text style={[styles.backLabel, { color: palette.muted }]}>Back</Text>
+						<Text style={[styles.backLabel, { color: palette.muted }]}>
+							Back
+						</Text>
 					</PressableScale>
 				) : (
 					<View style={styles.backPlaceholder} />
@@ -324,23 +315,21 @@ export default function OnboardingScreen() {
 					disabled={isContinuing}
 					contentStyle={[
 						styles.nextBtn,
-						{ backgroundColor: palette.primary, borderColor: palette.primaryBorder },
+						{ backgroundColor: palette.primary },
 					]}
 				>
 					<Text style={[styles.nextLabel, { color: palette.onPrimary }]}>
 						{isLast
 							? isContinuing
-								? "Starting…"
+								? "Starting..."
 								: "Get Started"
-							: "Next →"}
+							: "Continue"}
 					</Text>
 				</PressableScale>
 			</View>
 		</SafeAreaView>
 	);
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
 	safeArea: {
@@ -355,8 +344,8 @@ const styles = StyleSheet.create({
 		paddingBottom: spacing.sm,
 	},
 	dot: {
-		height: 8,
-		borderRadius: 4,
+		height: 6,
+		borderRadius: 3,
 	},
 	scroll: {
 		padding: spacing.lg,
@@ -367,33 +356,33 @@ const styles = StyleSheet.create({
 		gap: spacing.sm,
 	},
 	kicker: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 13,
+		...typeTokens.caption,
 		textTransform: "uppercase",
 		letterSpacing: 1.2,
 	},
 	title: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 34,
-		lineHeight: 40,
+		...typeTokens.displayLg,
 	},
 	body: {
-		fontFamily: "Nunito_700Bold",
-		fontSize: 15,
-		lineHeight: 22,
+		...typeTokens.body,
 		maxWidth: 340,
 	},
 	preview: {
-		borderWidth: 1,
-		borderRadius: radius.xl,
+		borderWidth: hairline,
+		borderRadius: radius.lg,
 		padding: spacing.md,
-		gap: spacing.sm,
 	},
-	privacyNote: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 13,
-		textAlign: "center",
-		lineHeight: 20,
+	trustBand: {
+		borderWidth: hairline,
+		borderRadius: radius.md,
+		padding: spacing.md,
+		gap: spacing.xxs,
+	},
+	trustTitle: {
+		...typeTokens.titleSm,
+	},
+	trustBody: {
+		...typeTokens.body,
 	},
 	nav: {
 		flexDirection: "row",
@@ -401,136 +390,82 @@ const styles = StyleSheet.create({
 		justifyContent: "space-between",
 		paddingHorizontal: spacing.lg,
 		paddingVertical: spacing.md,
-		borderTopWidth: 1,
+		borderTopWidth: hairline,
 		gap: spacing.sm,
 	},
 	backPlaceholder: {
-		width: 80,
+		width: 72,
 	},
 	backBtn: {
-		borderWidth: 2,
-		borderRadius: radius.pill,
-		paddingHorizontal: spacing.lg,
+		borderWidth: hairline,
+		borderRadius: radius.lg,
+		paddingHorizontal: spacing.md,
 		paddingVertical: 12,
 		alignItems: "center",
-		width: 80,
+		width: 72,
 	},
 	backLabel: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 14,
+		...typeTokens.button,
 	},
 	nextBtn: {
 		flex: 1,
-		borderWidth: 2,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.pill,
-		paddingVertical: 16,
+		borderRadius: radius.lg,
+		paddingVertical: 14,
 		alignItems: "center",
 	},
 	nextLabel: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 16,
-		textTransform: "uppercase",
-		letterSpacing: 0.5,
+		...typeTokens.button,
 	},
 });
 
 const mockStyles = StyleSheet.create({
 	card: {
-		borderWidth: 2,
-		borderBottomWidth: 4,
-		borderRadius: radius.lg,
-		padding: 12,
+		borderWidth: hairline,
+		borderRadius: radius.md,
+		padding: spacing.sm,
 	},
-	cardHeader: {
+	cardRow: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: 10,
-	},
-	logoBadge: {
-		width: 36,
-		height: 36,
-		borderRadius: 10,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	logoLabel: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 13,
+		gap: spacing.sm,
 	},
 	cardName: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 15,
+		...typeTokens.labelMd,
 	},
 	cardMeta: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 12,
+		...typeTokens.legal,
 	},
 	dueBadge: {
-		borderRadius: 8,
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-	},
-	dueLabel: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 12,
+		...typeTokens.caption,
 	},
 	reminder: {
-		borderWidth: 2,
-		borderBottomWidth: 4,
-		borderRadius: radius.lg,
-		padding: 12,
-		gap: 4,
-	},
-	reminderHeader: {
-		flexDirection: "row",
+		borderWidth: hairline,
+		borderRadius: radius.md,
+		padding: spacing.sm,
+		gap: 3,
 	},
 	reminderBadge: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 11,
-		textTransform: "uppercase",
+		...typeTokens.legal,
+		fontWeight: "500",
 		letterSpacing: 0.5,
 	},
 	reminderName: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 15,
+		...typeTokens.labelMd,
 	},
 	reminderSub: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 12,
-	},
-	intentRow: {
-		flexDirection: "row",
-		gap: 6,
-		marginTop: 4,
-	},
-	intentChip: {
-		borderWidth: 1,
-		borderRadius: 8,
-		paddingHorizontal: 10,
-		paddingVertical: 4,
-	},
-	intentLabel: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 11,
-		textTransform: "uppercase",
+		...typeTokens.legal,
 	},
 	note: {
-		borderWidth: 2,
-		borderBottomWidth: 4,
-		borderRadius: radius.lg,
-		padding: 12,
-		gap: 4,
+		borderWidth: hairline,
+		borderRadius: radius.md,
+		padding: spacing.sm,
+		gap: 3,
 	},
 	noteFrom: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 12,
-		textTransform: "uppercase",
-		letterSpacing: 0.5,
+		...typeTokens.legal,
+		fontWeight: "500",
 	},
 	noteText: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 13,
-		lineHeight: 18,
+		...typeTokens.body,
 	},
 });

@@ -16,14 +16,20 @@ jest.mock("@/utils/notifications", () => ({
 }));
 
 describe("OnboardingScreen", () => {
-	it("shows trust copy and continues into the app", async () => {
+	it("walks through steps, shows trust copy, and finishes into the app", async () => {
 		render(<OnboardingScreen />);
 		const { router } = jest.requireMock("expo-router");
 
-		expect(screen.getByText("CC Reminder")).toBeOnTheScreen();
-		expect(screen.getByText("Card data stays on-device.")).toBeOnTheScreen();
+		expect(screen.getByText("Your cards")).toBeOnTheScreen();
+		expect(screen.getByText(/Track every/)).toBeOnTheScreen();
 
 		fireEvent.press(screen.getByText("Continue"));
+		expect(screen.getByText("Reminders")).toBeOnTheScreen();
+
+		fireEvent.press(screen.getByText("Continue"));
+		expect(screen.getByText("Your data stays on your device")).toBeOnTheScreen();
+
+		fireEvent.press(screen.getByText("Get Started"));
 
 		await waitFor(() => expect(mockRequestNotificationPermission).toHaveBeenCalled());
 		await waitFor(() => expect(mockCompleteOnboarding).toHaveBeenCalled());

@@ -1,17 +1,10 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { useFonts } from "expo-font";
 import {
 	DarkTheme,
 	DefaultTheme,
 	ThemeProvider,
 } from "@react-navigation/native";
-import {
-	useFonts,
-	Nunito_400Regular,
-	Nunito_600SemiBold,
-	Nunito_700Bold,
-	Nunito_800ExtraBold,
-	Nunito_900Black,
-} from "@expo-google-fonts/nunito";
 import * as Notifications from "expo-notifications";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -25,7 +18,6 @@ import { CardsProvider } from "@/hooks/useCards";
 import { OnboardingProvider, useOnboarding } from "@/hooks/useOnboarding";
 
 export {
-	// Catch any errors thrown by the Layout component.
 	ErrorBoundary,
 } from "expo-router";
 
@@ -39,21 +31,13 @@ Notifications.setNotificationHandler({
 });
 
 export const unstable_settings = {
-	// Route root launches through `index`, which decides onboarding vs. tabs.
 	initialRouteName: "index",
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
 	const [loaded, error] = useFonts({
-		Nunito_400Regular,
-		Nunito_600SemiBold,
-		Nunito_700Bold,
-		Nunito_800ExtraBold,
-		Nunito_900Black,
-		SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
 		...FontAwesome.font,
 	});
 
@@ -75,7 +59,6 @@ function RootLayoutContent({
 }) {
 	const { isReady } = useOnboarding();
 
-	// Expo Router uses Error Boundaries to catch errors in the navigation tree.
 	useEffect(() => {
 		if (error) throw error;
 	}, [error]);
@@ -141,13 +124,14 @@ function RootLayoutNav() {
 							headerStyle: {
 								backgroundColor: palette.background,
 							},
+							headerTintColor: palette.text,
 							headerShadowVisible: false,
 							headerTitleStyle: {
-								fontFamily: "Nunito_800ExtraBold",
-								fontSize: 18,
+								fontWeight: "500",
+								fontSize: 16,
 							},
 							animation: "slide_from_right",
-							animationDuration: 220,
+							animationDuration: 200,
 						}}
 					>
 						<Stack.Screen name="index" options={{ headerShown: false }} />
@@ -160,7 +144,7 @@ function RootLayoutNav() {
 						<Stack.Screen name="card/[id]" options={{ title: "Card Details" }} />
 						<Stack.Screen
 							name="modal"
-							options={{ presentation: "modal", title: "About CC Reminder" }}
+							options={{ presentation: "modal", title: "About" }}
 						/>
 					</Stack>
 				</View>

@@ -39,7 +39,7 @@ describe("CardForm", () => {
 		);
 	});
 
-	it("reveals extended tracking fields and applies the provider template", () => {
+	it("reveals extended tracking fields after warning acceptance and applies the provider template", () => {
 		render(
 			<CardForm
 				title="Create a card"
@@ -50,15 +50,18 @@ describe("CardForm", () => {
 			/>,
 		);
 
-		fireEvent.press(screen.getByText("Extended tracking: off"));
+		fireEvent.press(screen.getByText("Extended tracking"));
 
-		expect(screen.getByText("Provider template")).toBeOnTheScreen();
-		expect(screen.getByText("Extended tracking")).toBeOnTheScreen();
+		expect(screen.getByText("Extended tracking acknowledgment")).toBeOnTheScreen();
+		fireEvent.press(screen.getByText("I understand, enable it"));
 
-		fireEvent.press(screen.getByText("Use American Express template"));
+		expect(screen.getByText("Provider template (advisory only)")).toBeOnTheScreen();
 
-		expect(screen.getByText("Using American Express template")).toBeOnTheScreen();
-		expect(screen.getByText("Amex reference template")).toBeOnTheScreen();
+		fireEvent.press(screen.getByText("American Express template"));
+
+		expect(
+			screen.getByText(/Use this only as a memory aid/),
+		).toBeOnTheScreen();
 	});
 
 	it("renders submit errors and delete affordance", async () => {

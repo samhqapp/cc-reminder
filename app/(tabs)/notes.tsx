@@ -11,9 +11,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { NoteSheet } from "@/components/card/NoteSheet";
 import { useColorScheme } from "@/components/useColorScheme";
 import { PressableScale } from "@/components/ui/PressableScale";
+import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import Colors from "@/constants/Colors";
-import { radius, shadow, spacing, thickness } from "@/constants/Tokens";
+import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
 import { useCards } from "@/hooks/useCards";
 import { useQuickNotes } from "@/hooks/useQuickNotes";
 import type { Card } from "@/types/domain";
@@ -23,18 +24,19 @@ export default function NotesScreen() {
 	const palette = Colors[colorScheme];
 	const { width } = useWindowDimensions();
 	const { cards } = useCards();
-	const { notes, isReady, addNote, deleteNote } = useQuickNotes();
+	const { notes, isReady, addNote, deleteNote, updateNote } = useQuickNotes();
 	const [draft, setDraft] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+	const [editingId, setEditingId] = useState<string | null>(null);
+	const [editingBody, setEditingBody] = useState("");
 
 	const hPad = spacing.lg;
 	const twoColumn = width >= 420;
 	const tileWidth = twoColumn
-		? (width - hPad * 2 - spacing.md) / 2
+		? (width - hPad * 2 - spacing.sm) / 2
 		: width - hPad * 2;
 
-	// Cards that have a note saved
 	const cardNotes = useMemo(
 		() => cards.filter((card) => card.note?.trim()),
 		[cards],
@@ -47,6 +49,24 @@ export default function NotesScreen() {
 			setDraft("");
 		}
 		setIsSaving(false);
+	}
+
+	function startEditing(id: string, body: string) {
+		setEditingId(id);
+		setEditingBody(body);
+	}
+
+	async function saveEdit() {
+		if (editingId && editingBody.trim()) {
+			await updateNote(editingId, editingBody.trim());
+		}
+		setEditingId(null);
+		setEditingBody("");
+	}
+
+	function cancelEdit() {
+		setEditingId(null);
+		setEditingBody("");
 	}
 
 	return (
@@ -65,45 +85,31 @@ export default function NotesScreen() {
 				<View
 					style={[
 						styles.composer,
-						{ backgroundColor: palette.card, borderColor: palette.borderSoft },
+						{ backgroundColor: palette.card, borderColor: palette.border },
 					]}
 				>
 					<TextField
 						label="Quick note"
 						value={draft}
 						onChangeText={setDraft}
-						placeholder="Jot something down…"
+						placeholder="Jot something down..."
 						multiline
-						minHeight={80}
+						minHeight={72}
 					/>
-					<PressableScale
+					<Button
+						title={isSaving ? "Saving..." : "Save note"}
+						variant="primary"
+						compact
 						onPress={() => void handleSave()}
 						disabled={isSaving || !draft.trim()}
-						contentStyle={[
-							styles.saveBtn,
-							{
-								backgroundColor: draft.trim() ? palette.primary : palette.cardAlt,
-								borderColor: draft.trim() ? palette.primaryBorder : palette.borderSoft,
-								borderBottomColor: draft.trim()
-									? palette.primaryBorder
-									: palette.borderSoft,
-							},
-						]}
-					>
-						<Text
-							style={[
-								styles.saveBtnLabel,
-								{ color: draft.trim() ? palette.onPrimary : palette.muted },
-							]}
-						>
-							{isSaving ? "Saving…" : "Save"}
-						</Text>
-					</PressableScale>
+					/>
 				</View>
 
 				{/* Loading state */}
 				{!isReady ? (
-					<Text style={[styles.loading, { color: palette.muted }]}>Loading…</Text>
+					<Text style={[styles.loading, { color: palette.muted }]}>
+						Loading...
+					</Text>
 				) : null}
 
 				{/* Empty state */}
@@ -111,15 +117,15 @@ export default function NotesScreen() {
 					<View
 						style={[
 							styles.emptyCard,
-							{ backgroundColor: palette.card, borderColor: palette.borderSoft },
+							{ backgroundColor: palette.surface, borderColor: palette.border },
 						]}
 					>
 						<Text style={[styles.emptyTitle, { color: palette.text }]}>
 							No notes yet
 						</Text>
 						<Text style={[styles.emptyBody, { color: palette.muted }]}>
-							Quick notes appear here. Card-level notes show up once you add them to
-							a card.
+							Quick notes appear here. Card-level notes show up once you add
+							them to a card.
 						</Text>
 					</View>
 				) : null}
@@ -131,41 +137,91 @@ export default function NotesScreen() {
 							Quick notes
 						</Text>
 						<View style={styles.grid}>
-							{notes.map((note) => (
-								<View
-									key={note.id}
-									style={[
-										styles.tile,
-										{
-											width: tileWidth,
-											backgroundColor: palette.card,
-											borderColor: palette.borderSoft,
-										},
-										shadow.soft,
-									]}
-								>
-									<Text style={[styles.tileBody, { color: palette.text }]}>
-										{note.body}
-									</Text>
-									<Text style={[styles.tileMeta, { color: palette.muted }]}>
-										{new Intl.DateTimeFormat(undefined, {
-											month: "short",
-											day: "numeric",
-										}).format(new Date(note.createdAt))}
-									</Text>
-									<PressableScale
-										onPress={() => void deleteNote(note.id)}
-										contentStyle={[
-											styles.deleteBtn,
-											{ borderColor: palette.borderSoft },
+							{notes.map((note) => {
+								const isEditing = editingId === note.id;
+								return (
+									<View
+										key={note.id}
+										style={[
+											styles.tile,
+											{
+												width: tileWidth,
+												backgroundColor: palette.card,
+												borderColor: palette.border,
+											},
 										]}
 									>
-										<Text style={[styles.deleteBtnLabel, { color: palette.muted }]}>
-											Delete
-										</Text>
-									</PressableScale>
-								</View>
-							))}
+										{isEditing ? (
+											<>
+												<TextField
+													label="Edit note"
+													value={editingBody}
+													onChangeText={setEditingBody}
+													multiline
+													minHeight={60}
+												/>
+												<View style={styles.editActions}>
+													<Button
+														title="Save"
+														variant="primary"
+														compact
+														style={{ flex: 1 }}
+														onPress={() => void saveEdit()}
+													/>
+													<Button
+														title="Cancel"
+														variant="secondary"
+														compact
+														style={{ flex: 1 }}
+														onPress={cancelEdit}
+													/>
+												</View>
+											</>
+										) : (
+											<>
+												<Text
+													style={[styles.tileBody, { color: palette.text }]}
+												>
+													{note.body}
+												</Text>
+												<Text
+													style={[styles.tileMeta, { color: palette.muted }]}
+												>
+													{new Intl.DateTimeFormat(undefined, {
+														month: "short",
+														day: "numeric",
+													}).format(new Date(note.createdAt))}
+												</Text>
+												<View style={styles.tileActions}>
+													<PressableScale
+														onPress={() => startEditing(note.id, note.body)}
+														contentStyle={styles.tileBtn}
+													>
+														<Text
+															style={[styles.tileBtnLabel, { color: palette.link }]}
+														>
+															Edit
+														</Text>
+													</PressableScale>
+													<PressableScale
+														onPress={() => void deleteNote(note.id)}
+														contentStyle={styles.tileBtn}
+													>
+														<Text
+															style={[
+																styles.tileBtnLabel,
+																{ color: palette.danger },
+															]}
+														>
+															Delete
+														</Text>
+													</PressableScale>
+												</View>
+											</>
+										)}
+									</View>
+								);
+							})}
 						</View>
 					</>
 				) : null}
@@ -186,9 +242,8 @@ export default function NotesScreen() {
 										{
 											width: tileWidth,
 											backgroundColor: palette.card,
-											borderColor: palette.borderSoft,
+											borderColor: palette.border,
 										},
-										shadow.soft,
 									]}
 								>
 									<Text
@@ -201,13 +256,13 @@ export default function NotesScreen() {
 										{card.provider}
 									</Text>
 									<Text
-										style={[styles.tileBody, { color: palette.text }]}
+										style={[styles.tileBody, { color: palette.body }]}
 										numberOfLines={4}
 									>
 										{card.note}
 									</Text>
-									<Text style={[styles.tapHint, { color: palette.primary }]}>
-										Tap to view
+									<Text style={[styles.viewLink, { color: palette.link }]}>
+										View full note
 									</Text>
 								</PressableScale>
 							))}
@@ -234,104 +289,76 @@ const styles = StyleSheet.create({
 	content: {
 		paddingTop: spacing.lg,
 		paddingBottom: 120,
-		gap: spacing.lg,
+		gap: spacing.md,
 	},
 	pageTitle: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 28,
-		marginBottom: 4,
+		...typeTokens.displayLg,
+		marginBottom: spacing.xs,
 	},
 	composer: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.xl,
+		borderWidth: hairline,
+		borderRadius: radius.lg,
 		padding: spacing.md,
 		gap: spacing.sm,
 	},
-	saveBtn: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.pill,
-		paddingVertical: 12,
-		alignItems: "center",
-	},
-	saveBtnLabel: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 14,
-		textTransform: "uppercase",
-		letterSpacing: 0.5,
-	},
 	loading: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 14,
+		...typeTokens.body,
 		textAlign: "center",
 	},
 	emptyCard: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.xl,
+		borderWidth: hairline,
+		borderRadius: radius.lg,
 		padding: spacing.lg,
 		gap: spacing.xs,
 	},
 	emptyTitle: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 18,
+		...typeTokens.titleMd,
 	},
 	emptyBody: {
-		fontFamily: "Nunito_700Bold",
-		fontSize: 14,
-		lineHeight: 20,
+		...typeTokens.body,
 	},
 	sectionLabel: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 12,
-		textTransform: "uppercase",
+		...typeTokens.caption,
+		textTransform: "uppercase" as const,
 		letterSpacing: 1,
-		marginBottom: -spacing.xs,
 	},
 	grid: {
 		flexDirection: "row",
 		flexWrap: "wrap",
-		gap: spacing.md,
+		gap: spacing.sm,
 	},
 	tile: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
+		borderWidth: hairline,
 		borderRadius: radius.lg,
 		padding: spacing.md,
 		gap: spacing.xs,
 	},
 	tileTitle: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 16,
-		lineHeight: 20,
+		...typeTokens.titleSm,
 	},
 	tileMeta: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 12,
-		lineHeight: 16,
+		...typeTokens.legal,
 	},
 	tileBody: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 14,
-		lineHeight: 20,
+		...typeTokens.body,
 	},
-	deleteBtn: {
-		borderWidth: 1,
-		borderRadius: radius.pill,
-		paddingVertical: 6,
-		paddingHorizontal: 14,
-		alignSelf: "flex-start",
-		marginTop: 2,
+	tileActions: {
+		flexDirection: "row",
+		gap: spacing.sm,
+		marginTop: 4,
 	},
-	deleteBtnLabel: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 12,
-		textTransform: "uppercase",
+	tileBtn: {
+		paddingVertical: 2,
 	},
-	tapHint: {
-		fontFamily: "Nunito_700Bold",
-		fontSize: 12,
-		marginTop: 2,
+	tileBtnLabel: {
+		...typeTokens.caption,
+	},
+	editActions: {
+		flexDirection: "row",
+		gap: spacing.xs,
+	},
+	viewLink: {
+		...typeTokens.legal,
+		marginTop: 4,
 	},
 });

@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { CardForm } from "@/components/card/CardForm";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { radius, spacing } from "@/constants/Tokens";
+import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
 import { mapCardToDraft, useCards } from "@/hooks/useCards";
 import { deriveReminders } from "@/utils/reminders";
 import { blurActiveElementOnWeb } from "@/utils/web";
@@ -27,7 +27,7 @@ export default function CardDetailScreen() {
 				<View
 					style={[
 						styles.missing,
-						{ backgroundColor: palette.card, borderColor: palette.border },
+						{ backgroundColor: palette.surface, borderColor: palette.border },
 					]}
 				>
 					<Text style={[styles.missingTitle, { color: palette.text }]}>
@@ -49,7 +49,7 @@ export default function CardDetailScreen() {
 			<CardForm
 				key={card.id}
 				title={card.name}
-				subtitle={`Upcoming derived stages: ${reminders.length}. Edit only what belongs to the card aggregate and keep sensitive data out.`}
+				subtitle={`${reminders.length} upcoming reminder${reminders.length === 1 ? "" : "s"}. Edit card details below.`}
 				initialDraft={mapCardToDraft(card)}
 				submitLabel="Save changes"
 				onSubmit={async (draft) => {
@@ -72,23 +72,18 @@ export default function CardDetailScreen() {
 
 const styles = StyleSheet.create({
 	content: {
-		padding: spacing.xl,
+		padding: spacing.lg,
 	},
 	missing: {
-		borderWidth: 2,
-		borderBottomWidth: 4,
-		borderRadius: radius.xl,
-		padding: spacing.xl,
+		borderWidth: hairline,
+		borderRadius: radius.lg,
+		padding: spacing.lg,
 		gap: spacing.sm,
 	},
 	missingTitle: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 24,
-		lineHeight: 32,
+		...typeTokens.titleLg,
 	},
 	missingBody: {
-		fontFamily: "Nunito_700Bold",
-		fontSize: 16,
-		lineHeight: 22,
+		...typeTokens.body,
 	},
 });

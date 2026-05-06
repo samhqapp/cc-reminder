@@ -15,6 +15,6 @@ describe("Themed components", () => {
 		);
 
 		expect(screen.getByText("Hello world")).toHaveStyle({ color: "#222222" });
-		expect(screen.getByTestId("wrapper")).toHaveStyle({ backgroundColor: "#EEF4FF" });
+		expect(screen.getByTestId("wrapper")).toHaveStyle({ backgroundColor: "#ffffff" });
 	});
 });

@@ -12,12 +12,11 @@ import { NoteSheet } from "@/components/card/NoteSheet";
 import { useColorScheme } from "@/components/useColorScheme";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { Button } from "@/components/ui/Button";
-import Colors from "@/constants/Colors";
-import { radius, shadow, spacing, thickness } from "@/constants/Tokens";
-import { findCompanyPreset } from "@/data/companyPresets";
+import Colors, { type AppPalette } from "@/constants/Colors";
+import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
 import { mapCardToDraft, useCards } from "@/hooks/useCards";
 import type { Card, DerivedReminder, SubscriptionIntent } from "@/types/domain";
-import { formatFullDate, relativeDayLabel } from "@/utils/date";
+import { formatFullDate } from "@/utils/date";
 import { deriveReminders } from "@/utils/reminders";
 
 export default function RemindersScreen() {
@@ -35,11 +34,10 @@ export default function RemindersScreen() {
 
 	const reminders = useMemo(() => deriveReminders(cards), [cards]);
 
-	// Single-column on narrow screens, two-column on wider
 	const hPad = spacing.lg;
 	const twoColumn = width >= 420;
 	const tileWidth = twoColumn
-		? (width - hPad * 2 - spacing.md) / 2
+		? (width - hPad * 2 - spacing.sm) / 2
 		: width - hPad * 2;
 
 	async function handleFlipIntent(card: Card, intent: SubscriptionIntent) {
@@ -57,13 +55,15 @@ export default function RemindersScreen() {
 				contentContainerStyle={[styles.content, { paddingHorizontal: hPad }]}
 				showsVerticalScrollIndicator={false}
 			>
-				<Text style={[styles.pageTitle, { color: palette.text }]}>Reminders</Text>
+				<Text style={[styles.pageTitle, { color: palette.text }]}>
+					Reminders
+				</Text>
 
 				{reminders.length === 0 ? (
 					<View
 						style={[
 							styles.emptyCard,
-							{ backgroundColor: palette.card, borderColor: palette.borderSoft },
+							{ backgroundColor: palette.surface, borderColor: palette.border },
 						]}
 					>
 						<Text style={[styles.emptyTitle, { color: palette.text }]}>
@@ -78,11 +78,6 @@ export default function RemindersScreen() {
 				<View style={styles.grid}>
 					{reminders.map((reminder) => {
 						const card = cards.find((item) => item.id === reminder.cardId);
-						const companyTheme = findCompanyPreset(
-							reminder.provider,
-							reminder.companyKey,
-						);
-
 						return (
 							<ReminderTile
 								key={reminder.id}
@@ -90,7 +85,6 @@ export default function RemindersScreen() {
 								card={card ?? null}
 								width={tileWidth}
 								palette={palette}
-								companySurface={companyTheme?.surface ?? palette.card}
 								onOpenNote={() => setSelectedCard(card ?? null)}
 								onAcknowledge={() =>
 									void acknowledgeReminder(reminder.cardId, reminder.id)
@@ -98,7 +92,7 @@ export default function RemindersScreen() {
 								onSnooze={() =>
 									void snoozeReminder(reminder.cardId, reminder.id, 12)
 								}
-								onHandle={() =>
+								onSettle={() =>
 									void settleCycle(reminder.cardId, reminder.cycleId)
 								}
 								onFlipIntent={(intent) =>
@@ -121,6 +115,24 @@ export default function RemindersScreen() {
 	);
 }
 
+function toneColor(tone: string, palette: AppPalette): string {
+	if (tone === "danger") return palette.danger;
+	if (tone === "warning") return palette.warning;
+	if (tone === "success") return palette.success;
+	return palette.muted;
+}
+
+function toneSurface(tone: string, palette: AppPalette): string {
+	if (tone === "danger") return palette.dangerSoft;
+	if (tone === "warning") return palette.warningSoft;
+	if (tone === "success") return palette.successSoft;
+	return palette.surface;
+}
+
+function needsSettlement(stage: string) {
+	return stage === "overdue" || stage === "extended" || stage === "due-today";
+}
+
 function ReminderTile({
 	reminder,
 	card,
@@ -128,9 +140,8 @@ function ReminderTile({
 	onOpenNote,
 	onAcknowledge,
 	onSnooze,
-	onHandle,
+	onSettle,
 	onFlipIntent,
-	companySurface,
 	palette,
 }: {
 	reminder: DerivedReminder;
@@ -139,20 +150,12 @@ function ReminderTile({
 	onOpenNote: () => void;
 	onAcknowledge: () => void;
 	onSnooze: () => void;
-	onHandle: () => void;
+	onSettle: () => void;
 	onFlipIntent: (intent: SubscriptionIntent) => void;
-	companySurface: string;
-	palette: (typeof Colors)["light"] | (typeof Colors)["dark"];
+	palette: AppPalette;
 }) {
-	const toneColor =
-		reminder.tone === "danger"
-			? palette.danger
-			: reminder.tone === "warning"
-				? palette.warning
-				: reminder.tone === "success"
-					? palette.success
-					: palette.primary;
-
+	const tc = toneColor(reminder.tone, palette);
+	const ts = toneSurface(reminder.tone, palette);
 	const currentIntent = card?.intent ?? reminder.intent;
 
 	return (
@@ -161,24 +164,35 @@ function ReminderTile({
 				styles.tile,
 				{
 					width,
-					backgroundColor: companySurface,
+					backgroundColor: palette.card,
 					borderColor: palette.border,
-					borderBottomColor: palette.border3D,
 				},
-				shadow.soft,
 			]}
 		>
-			{/* Header row: tone badge + relative date */}
+			{/* Tone indicator stripe */}
+			<View style={[styles.toneStripe, { backgroundColor: tc }]} />
+
+			{/* Header: stage badge + date */}
 			<View style={styles.tileHeader}>
-				<Text style={[styles.badge, { color: toneColor }]}>
-					{reminder.stage === "overdue" ? "Overdue" : relativeDayLabel(reminder.dueDate)}
-				</Text>
-				<Text style={[styles.badgeMuted, { color: palette.muted }]}>
+				<View style={[styles.stageBadge, { backgroundColor: ts }]}>
+					<Text style={[styles.stageLabel, { color: tc }]}>
+						{reminder.stage === "overdue"
+							? "Overdue"
+							: reminder.stage === "due-today"
+								? "Due today"
+								: reminder.stage === "billing"
+									? "Billing"
+									: reminder.stage === "extended"
+										? "Extended"
+										: "Due soon"}
+					</Text>
+				</View>
+				<Text style={[styles.tileDate, { color: palette.muted }]}>
 					{formatFullDate(reminder.dueDate)}
 				</Text>
 			</View>
 
-			{/* Title */}
+			{/* Title + subtitle */}
 			<Text style={[styles.tileTitle, { color: palette.text }]} numberOfLines={1}>
 				{reminder.title}
 			</Text>
@@ -187,7 +201,7 @@ function ReminderTile({
 			</Text>
 
 			{/* Intent toggle */}
-			<View style={[styles.intentRow, { backgroundColor: palette.cardAlt }]}>
+			<View style={styles.intentRow}>
 				{(["cancel", "continue"] as const).map((intent) => {
 					const active = currentIntent === intent;
 					return (
@@ -196,23 +210,26 @@ function ReminderTile({
 							onPress={() => onFlipIntent(intent)}
 							contentStyle={[
 								styles.intentBtn,
-								active
-									? {
-											backgroundColor:
-												intent === "cancel" ? palette.danger : palette.success,
-											borderBottomWidth: thickness.border3DSmall,
-											borderBottomColor:
-												intent === "cancel"
-													? palette.dangerBorder
-													: palette.successBorder,
-										}
-									: null,
+								{
+									backgroundColor: active
+										? intent === "cancel"
+											? palette.danger
+											: palette.success
+										: "transparent",
+									borderColor: active
+										? "transparent"
+										: palette.border,
+								},
 							]}
 						>
 							<Text
 								style={[
 									styles.intentLabel,
-									{ color: active ? palette.onPrimary : palette.muted },
+									{
+										color: active
+											? "#ffffff"
+											: palette.muted,
+									},
 								]}
 							>
 								{intent === "cancel" ? "Cancel" : "Keep"}
@@ -222,28 +239,43 @@ function ReminderTile({
 				})}
 			</View>
 
-			{/* Action buttons */}
+			{/* Action buttons: separate Acknowledge and Settle */}
 			<View style={styles.tileActions}>
-				<Button
-					title="Handled"
-					variant={reminder.tone === "danger" ? "danger" : "success"}
-					style={styles.actionBtn}
-					onPress={onHandle}
-				/>
+				{!reminder.isAcknowledged ? (
+					<Button
+						title="Seen"
+						variant="secondary"
+						compact
+						style={styles.actionBtn}
+						onPress={onAcknowledge}
+					/>
+				) : null}
+				{needsSettlement(reminder.stage) ? (
+					<Button
+						title="Settled"
+						variant={reminder.tone === "danger" ? "danger" : "success"}
+						compact
+						style={styles.actionBtn}
+						onPress={onSettle}
+					/>
+				) : null}
 				<Button
 					title="Snooze"
 					variant="secondary"
+					compact
 					style={styles.actionBtn}
 					onPress={onSnooze}
 				/>
 			</View>
 
-			{/* Long-press hint */}
-			<PressableScale onPress={onOpenNote} contentStyle={styles.noteHint}>
-				<Text style={[styles.noteHintText, { color: palette.muted }]}>
-					📝 View note
-				</Text>
-			</PressableScale>
+			{/* Note link */}
+			{card?.note ? (
+				<PressableScale onPress={onOpenNote} contentStyle={styles.noteLink}>
+					<Text style={[styles.noteLinkText, { color: palette.link }]}>
+						View note
+					</Text>
+				</PressableScale>
+			) : null}
 		</View>
 	);
 }
@@ -255,100 +287,99 @@ const styles = StyleSheet.create({
 	content: {
 		paddingTop: spacing.lg,
 		paddingBottom: 120,
-		gap: spacing.lg,
+		gap: spacing.md,
 	},
 	pageTitle: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 28,
-		marginBottom: 4,
+		...typeTokens.displayLg,
+		marginBottom: spacing.xs,
 	},
 	emptyCard: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.xl,
+		borderWidth: hairline,
+		borderRadius: radius.lg,
 		padding: spacing.lg,
 		gap: spacing.xs,
 	},
 	emptyTitle: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 18,
+		...typeTokens.titleMd,
 	},
 	emptyBody: {
-		fontFamily: "Nunito_700Bold",
-		fontSize: 14,
-		lineHeight: 20,
+		...typeTokens.body,
 	},
 	grid: {
 		flexDirection: "row",
 		flexWrap: "wrap",
-		gap: spacing.md,
+		gap: spacing.sm,
 	},
 	tile: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.xl,
+		borderWidth: hairline,
+		borderRadius: radius.lg,
 		padding: spacing.md,
-		gap: spacing.sm,
+		paddingTop: spacing.sm,
+		gap: spacing.xs,
+		overflow: "hidden",
+	},
+	toneStripe: {
+		position: "absolute",
+		top: 0,
+		left: 0,
+		right: 0,
+		height: 3,
+		borderTopLeftRadius: radius.lg,
+		borderTopRightRadius: radius.lg,
 	},
 	tileHeader: {
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
+		marginTop: 2,
 	},
-	badge: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 13,
-		textTransform: "uppercase",
-		letterSpacing: 0.5,
+	stageBadge: {
+		borderRadius: radius.xs,
+		paddingHorizontal: 8,
+		paddingVertical: 3,
 	},
-	badgeMuted: {
-		fontFamily: "Nunito_700Bold",
-		fontSize: 12,
+	stageLabel: {
+		...typeTokens.legal,
+		fontWeight: "500",
+	},
+	tileDate: {
+		...typeTokens.legal,
 	},
 	tileTitle: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 18,
-		lineHeight: 22,
+		...typeTokens.titleSm,
 	},
 	tileBody: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 13,
-		lineHeight: 18,
+		...typeTokens.legal,
 	},
 	intentRow: {
 		flexDirection: "row",
-		borderRadius: radius.md,
-		padding: 3,
-		gap: 3,
+		gap: 6,
+		marginTop: 2,
 	},
 	intentBtn: {
 		flex: 1,
+		borderWidth: hairline,
 		borderRadius: radius.sm,
-		paddingVertical: 8,
+		paddingVertical: 7,
 		alignItems: "center",
-		borderWidth: 0,
 	},
 	intentLabel: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 12,
-		textTransform: "uppercase",
-		letterSpacing: 0.5,
+		...typeTokens.legal,
+		fontWeight: "500",
 	},
 	tileActions: {
 		flexDirection: "row",
-		gap: spacing.xs,
+		gap: 6,
+		marginTop: 2,
 	},
 	actionBtn: {
 		flex: 1,
-		paddingVertical: 10,
-		paddingHorizontal: 4,
 	},
-	noteHint: {
+	noteLink: {
 		alignItems: "center",
 		paddingVertical: 2,
 	},
-	noteHintText: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 12,
+	noteLinkText: {
+		...typeTokens.legal,
 	},
 });

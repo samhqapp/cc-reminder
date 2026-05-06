@@ -52,6 +52,14 @@ export function useQuickNotes() {
 		return true;
 	}
 
+	async function updateNote(id: string, body: string) {
+		const nextNotes = notes.map((note) =>
+			note.id === id ? { ...note, body } : note,
+		);
+		setNotes(nextNotes);
+		await saveJson(storageKeys.quickNotes, nextNotes);
+	}
+
 	async function deleteNote(id: string) {
 		const nextNotes = notes.filter((note) => note.id !== id);
 		setNotes(nextNotes);
@@ -62,6 +70,7 @@ export function useQuickNotes() {
 		notes,
 		isReady,
 		addNote,
+		updateNote,
 		deleteNote,
 	};
 }

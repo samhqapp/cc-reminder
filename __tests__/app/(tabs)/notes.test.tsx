@@ -35,12 +35,13 @@ describe("NotesScreen", () => {
 			isReady: true,
 			addNote: mockAddNote,
 			deleteNote: mockDeleteNote,
+			updateNote: jest.fn(async () => undefined),
 		});
 
 		render(<NotesScreen />);
 
 		expect(screen.getByText("Netflix Family")).toBeOnTheScreen();
-		fireEvent.changeText(screen.getByPlaceholderText("Add a general note you want to remember later."), "Track statement");
+		fireEvent.changeText(screen.getByPlaceholderText("Jot something down..."), "Track statement");
 		fireEvent.press(screen.getByText("Save note"));
 
 		await waitFor(() => expect(mockAddNote).toHaveBeenCalledWith("Track statement"));
@@ -58,16 +59,18 @@ describe("NotesScreen", () => {
 			isReady: false,
 			addNote: mockAddNote,
 			deleteNote: mockDeleteNote,
+			updateNote: jest.fn(async () => undefined),
 		});
 
 		const { rerender } = render(<NotesScreen />);
-		expect(screen.getByText("Loading…")).toBeOnTheScreen();
+		expect(screen.getByText("Loading...")).toBeOnTheScreen();
 
 		mockUseQuickNotes.mockReturnValue({
 			notes: [],
 			isReady: true,
 			addNote: mockAddNote,
 			deleteNote: mockDeleteNote,
+			updateNote: jest.fn(async () => undefined),
 		});
 
 		rerender(<NotesScreen />);

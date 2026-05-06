@@ -2,7 +2,7 @@ import { StyleSheet, Text } from "react-native";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { shadow, thickness } from "@/constants/Tokens";
+import { hairline } from "@/constants/Tokens";
 import { PressableScale } from "@/components/ui/PressableScale";
 
 type Props = {
@@ -20,10 +20,8 @@ export function FloatingAddButton({ onPress }: Props) {
 				styles.button,
 				{
 					backgroundColor: palette.primary,
-					borderColor: palette.primaryBorder,
-					shadowColor: palette.primaryBorder,
+					borderColor: palette.primary,
 				},
-				shadow.medium,
 			]}
 		>
 			<Text style={[styles.label, { color: palette.onPrimary }]}>+</Text>
@@ -33,18 +31,16 @@ export function FloatingAddButton({ onPress }: Props) {
 
 const styles = StyleSheet.create({
 	button: {
-		width: 72,
-		height: 72,
-		borderRadius: 36,
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
+		width: 56,
+		height: 56,
+		borderRadius: 28,
+		borderWidth: hairline,
 		alignItems: "center",
 		justifyContent: "center",
 	},
 	label: {
-		fontSize: 40,
-		lineHeight: 44,
-		fontWeight: "900",
-		marginTop: -2,
+		fontSize: 28,
+		lineHeight: 30,
+		fontWeight: "400",
 	},
 });

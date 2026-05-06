@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { useColorScheme } from "@/components/useColorScheme";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import Colors from "@/constants/Colors";
-import { radius, spacing } from "@/constants/Tokens";
+import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
 
 type Props = {
 	visible: boolean;
@@ -33,10 +33,10 @@ export function NoteSheet({
 			<View
 				style={[
 					styles.card,
-					{ backgroundColor: palette.cardAlt, borderColor: palette.borderSoft },
+					{ backgroundColor: palette.surface, borderColor: palette.border },
 				]}
 			>
-				<Text style={[styles.note, { color: palette.text }]}>
+				<Text style={[styles.note, { color: palette.body }]}>
 					{note?.trim() || "No note saved for this card yet."}
 				</Text>
 			</View>
@@ -46,13 +46,11 @@ export function NoteSheet({
 
 const styles = StyleSheet.create({
 	card: {
-		borderWidth: 1,
-		borderRadius: radius.lg,
-		padding: spacing.lg,
+		borderWidth: hairline,
+		borderRadius: radius.md,
+		padding: spacing.md,
 	},
 	note: {
-		fontSize: 15,
-		lineHeight: 22,
-		fontWeight: "600",
+		...typeTokens.body,
 	},
 });

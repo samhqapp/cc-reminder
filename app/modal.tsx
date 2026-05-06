@@ -1,27 +1,26 @@
 import { StatusBar } from "expo-status-bar";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { Text } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { radius, spacing, thickness } from "@/constants/Tokens";
+import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
 
 const sections = [
 	{
-		title: "Trust Boundary",
-		body: "CC Reminder is local-first. It stores card labels, last 4 digits, tags, dates, reminder state, notes, and optional extended tracking data on-device only in v1.",
+		title: "Trust boundary",
+		body: "CC Reminder is local-first. It stores card labels, last 4 digits, tags, dates, reminder state, notes, and optional extended tracking data on-device only.",
 	},
 	{
-		title: "What It Never Stores",
+		title: "What it never stores",
 		body: "No full card number, CVV, expiry date, payment credential, or bank connection lives in this app.",
 	},
 	{
-		title: "Provider Templates",
+		title: "Provider templates",
 		body: "Issuer templates are memory aids only. They are not legal advice, not official verification, and not a guarantee that a late payment will be treated a certain way.",
 	},
 	{
-		title: "Reminder Model",
-		body: "Billing, due soon, due today, overdue, and extended-window reminders are stage-derived. The product intentionally avoids arbitrary custom reminder builders in v1.",
+		title: "Reminder model",
+		body: "Billing, due soon, due today, overdue, and extended-window reminders are stage-derived. The product avoids arbitrary custom reminder builders.",
 	},
 ];
 
@@ -39,18 +38,18 @@ export default function ModalScreen() {
 				<View
 					style={[
 						styles.hero,
-						{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
+						{ backgroundColor: palette.surface, borderColor: palette.border },
 					]}
 				>
-					<Text style={[styles.kicker, { color: palette.primary }]}>
+					<Text style={[styles.kicker, { color: palette.link }]}>
 						About CC Reminder
 					</Text>
 					<Text style={[styles.title, { color: palette.text }]}>
 						Open source trust, local-first data, and stage-based reminders.
 					</Text>
-					<Text style={[styles.subtitle, { color: palette.muted }]}>
-						This app is designed to remember payment timelines without
-						pretending to be a bank integration or financial authority.
+					<Text style={[styles.subtitle, { color: palette.body }]}>
+						This app is designed to remember payment timelines without pretending
+						to be a bank integration or financial authority.
 					</Text>
 				</View>
 
@@ -59,7 +58,7 @@ export default function ModalScreen() {
 						key={section.title}
 						style={[
 							styles.section,
-							{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
+							{ borderColor: palette.border },
 						]}
 					>
 						<Text style={[styles.sectionTitle, { color: palette.text }]}>
@@ -78,47 +77,35 @@ export default function ModalScreen() {
 
 const styles = StyleSheet.create({
 	content: {
-		padding: spacing.xl,
-		gap: spacing.lg,
+		padding: spacing.lg,
+		gap: spacing.md,
 	},
 	hero: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.xl,
-		padding: spacing.xl,
+		borderWidth: hairline,
+		borderRadius: radius.lg,
+		padding: spacing.lg,
 		gap: spacing.sm,
 	},
 	kicker: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 14,
+		...typeTokens.caption,
 		textTransform: "uppercase",
 		letterSpacing: 1,
 	},
 	title: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 28,
-		lineHeight: 34,
+		...typeTokens.titleLg,
 	},
 	subtitle: {
-		fontFamily: "Nunito_700Bold",
-		fontSize: 16,
-		lineHeight: 22,
+		...typeTokens.body,
 	},
 	section: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.lg,
-		padding: spacing.lg,
-		gap: spacing.xs,
+		borderBottomWidth: hairline,
+		paddingVertical: spacing.md,
+		gap: spacing.xxs,
 	},
 	sectionTitle: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 18,
-		lineHeight: 24,
+		...typeTokens.titleSm,
 	},
 	sectionBody: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 15,
-		lineHeight: 22,
+		...typeTokens.body,
 	},
 });

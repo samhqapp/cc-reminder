@@ -60,10 +60,10 @@ describe("RemindersScreen", () => {
 
 		render(<RemindersScreen />);
 
-		expect(screen.getByText("Decision board")).toBeOnTheScreen();
+		expect(screen.getByText("Reminders")).toBeOnTheScreen();
 		fireEvent.press(screen.getByText("Seen"));
 		fireEvent.press(screen.getByText("Snooze"));
-		fireEvent.press(screen.getByText("Handled"));
+		fireEvent.press(screen.getByText("Settled"));
 
 		await waitFor(() => expect(mockAcknowledgeReminder).toHaveBeenCalledWith("card-1", "reminder-1"));
 		expect(mockSnoozeReminder).toHaveBeenCalledWith("card-1", "reminder-1", 12);
@@ -81,6 +81,6 @@ describe("RemindersScreen", () => {
 		mockGetReminderMetrics.mockReturnValue({ cardCount: 0, activeCount: 0, overdueCount: 0 });
 
 		render(<RemindersScreen />);
-		expect(screen.getByText("Nothing to act on")).toBeOnTheScreen();
+		expect(screen.getByText("Nothing due")).toBeOnTheScreen();
 	});
 });

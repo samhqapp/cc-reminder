@@ -27,10 +27,9 @@ export function PressableScale({
 
 	const animatedStyle = useAnimatedStyle(() => ({
 		transform: [
-			{ scale: withTiming(pressed.value ? 0.97 : 1, { duration: motion.fast }) },
-			{ translateY: withTiming(pressed.value ? 3 : 0, { duration: motion.fast }) },
+			{ scale: withTiming(pressed.value ? 0.98 : 1, { duration: motion.fast }) },
 		],
-		opacity: withTiming(pressed.value && disabled ? 0.5 : disabled ? 0.5 : 1, {
+		opacity: withTiming(disabled ? 0.4 : pressed.value ? 0.7 : 1, {
 			duration: motion.fast,
 		}),
 	}));

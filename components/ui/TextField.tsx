@@ -3,15 +3,16 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { radius, spacing, thickness } from "@/constants/Tokens";
+import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
 
 type Props = TextInputProps & {
 	label: string;
 	hint?: string;
+	error?: string;
 	minHeight?: number;
 };
 
-export function TextField({ label, hint, minHeight, style, ...props }: Props) {
+export function TextField({ label, hint, error, minHeight, style, ...props }: Props) {
 	const colorScheme = useColorScheme() ?? "light";
 	const palette = Colors[colorScheme];
 
@@ -26,13 +27,15 @@ export function TextField({ label, hint, minHeight, style, ...props }: Props) {
 					{
 						color: palette.text,
 						backgroundColor: palette.cardAlt,
-						borderColor: palette.borderSoft,
+						borderColor: error ? palette.danger : palette.border,
 					},
 					minHeight ? { minHeight } : undefined,
 					style,
 				]}
 			/>
-			{hint ? (
+			{error ? (
+				<Text style={[styles.hint, { color: palette.danger }]}>{error}</Text>
+			) : hint ? (
 				<Text style={[styles.hint, { color: palette.muted }]}>{hint}</Text>
 			) : null}
 		</View>
@@ -44,22 +47,17 @@ const styles = StyleSheet.create({
 		gap: 6,
 	},
 	label: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 14,
-		lineHeight: 18,
+		...typeTokens.caption,
 	},
 	input: {
-		fontFamily: "Nunito_700Bold",
-		borderWidth: thickness.border,
-		borderRadius: radius.md,
+		...typeTokens.body,
+		borderWidth: hairline,
+		borderRadius: radius.sm,
 		paddingHorizontal: spacing.md,
-		paddingVertical: 14,
-		fontSize: 16,
-		lineHeight: 22,
+		paddingVertical: 12,
+		fontSize: 15,
 	},
 	hint: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 12,
-		lineHeight: 18,
+		...typeTokens.legal,
 	},
 });

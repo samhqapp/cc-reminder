@@ -7,7 +7,7 @@ import { PressableScale } from "@/components/ui/PressableScale";
 import { TextField } from "@/components/ui/TextField";
 import { Button } from "@/components/ui/Button";
 import Colors from "@/constants/Colors";
-import { radius, spacing, thickness } from "@/constants/Tokens";
+import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
 import {
 	findCompanyPreset,
 	searchCompanyPresets,
@@ -64,12 +64,14 @@ export function AddCardSheet({
 		<BottomSheet
 			visible={visible}
 			title="Add card"
-			subtitle="Quick setup for subscription reminders and cancellation notes."
+			subtitle="Quick setup for subscription reminders."
 			onClose={onClose}
 			footer={
 				<View style={styles.footerWrap}>
 					{error ? (
-						<Text style={[styles.error, { color: palette.danger }]}>{error}</Text>
+						<Text style={[styles.error, { color: palette.danger }]}>
+							{error}
+						</Text>
 					) : null}
 					<Button
 						title={isSaving ? "Saving..." : "Save card"}
@@ -108,10 +110,14 @@ export function AddCardSheet({
 								}
 								contentStyle={[
 									styles.suggestionChip,
-									{ backgroundColor: item.surface, borderColor: palette.borderSoft },
+									{
+										borderColor: palette.border,
+									},
 								]}
 							>
-								<Text style={[styles.suggestionLabel, { color: palette.text }]}>
+								<Text
+									style={[styles.suggestionLabel, { color: palette.text }]}
+								>
 									{item.name}
 								</Text>
 							</PressableScale>
@@ -159,7 +165,7 @@ export function AddCardSheet({
 					onChangeText={(value) => update({ note: value })}
 					placeholder="Cancellation link, phone, or reminder note."
 					multiline
-					minHeight={96}
+					minHeight={72}
 				/>
 			</ScrollView>
 		</BottomSheet>
@@ -168,10 +174,10 @@ export function AddCardSheet({
 
 const styles = StyleSheet.create({
 	scroll: {
-		maxHeight: 520,
+		maxHeight: 480,
 	},
 	content: {
-		gap: spacing.lg,
+		gap: spacing.md,
 		paddingBottom: spacing.xs,
 	},
 	footerWrap: {
@@ -188,24 +194,19 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		flexWrap: "wrap",
 		gap: spacing.xs,
-		marginTop: -spacing.md,
+		marginTop: -spacing.xs,
 	},
 	suggestionChip: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3DSmall,
+		borderWidth: hairline,
 		borderRadius: radius.pill,
-		paddingHorizontal: spacing.md,
-		paddingVertical: 10,
+		paddingHorizontal: spacing.sm,
+		paddingVertical: 8,
 	},
 	suggestionLabel: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 14,
-		lineHeight: 18,
+		...typeTokens.caption,
 	},
 	error: {
-		fontFamily: "Nunito_700Bold",
-		fontSize: 13,
-		lineHeight: 18,
+		...typeTokens.body,
 		textAlign: "center",
 	},
 });

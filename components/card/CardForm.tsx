@@ -3,16 +3,17 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { Button } from "@/components/ui/Button";
+import { PressableScale } from "@/components/ui/PressableScale";
 import { TextField } from "@/components/ui/TextField";
 import Colors from "@/constants/Colors";
-import { radius, spacing, thickness } from "@/constants/Tokens";
+import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
 import { providerTemplates } from "@/data/providerTemplates";
 import type { CardDraft } from "@/types/domain";
 
-const EXTENDED_TRACKING_WARNING =
+const EXTENDED_WARNING =
 	"Grace periods, extension windows, minimum-payment effects, late fees, and credit-reporting outcomes depend on your specific card agreement and may change without notice. CC Reminder cannot monitor your issuer's policies.";
 
-const EXTENDED_TRACKING_RESPONSIBILITY =
+const EXTENDED_RESPONSIBILITY =
 	"By enabling extended payment tracking, you acknowledge that any extended date shown here is only a memory aid. It is not a guarantee, not legal advice, not financial advice, and may still be wrong for your card. You are responsible for verifying the actual terms directly with your issuer.";
 
 type Props = {
@@ -37,6 +38,7 @@ export function CardForm({
 	const [draft, setDraft] = useState<CardDraft>(initialDraft);
 	const [error, setError] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
+	const [showWarning, setShowWarning] = useState(false);
 
 	const template = useMemo(
 		() =>
@@ -46,6 +48,25 @@ export function CardForm({
 
 	function update(next: Partial<CardDraft>) {
 		setDraft((current) => ({ ...current, ...next }));
+	}
+
+	function handleExtendedToggle() {
+		if (!draft.extendedTrackingEnabled) {
+			setShowWarning(true);
+		} else {
+			update({
+				extendedTrackingEnabled: false,
+				acknowledgmentAccepted: false,
+			});
+		}
+	}
+
+	function acceptWarning() {
+		update({
+			extendedTrackingEnabled: true,
+			acknowledgmentAccepted: true,
+		});
+		setShowWarning(false);
 	}
 
 	async function handleSubmit() {
@@ -61,22 +82,19 @@ export function CardForm({
 			contentContainerStyle={styles.content}
 			showsVerticalScrollIndicator={false}
 		>
-			<View
-				style={[
-					styles.section,
-					{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
-				]}
-			>
-				<Text style={[styles.title, { color: palette.text }]}>{title}</Text>
-				<Text style={[styles.helper, { color: palette.muted }]}>
+			{/* Header */}
+			<View style={styles.headerSection}>
+				<Text style={[styles.formTitle, { color: palette.text }]}>{title}</Text>
+				<Text style={[styles.formSubtitle, { color: palette.muted }]}>
 					{subtitle}
 				</Text>
 			</View>
 
+			{/* Card identity */}
 			<View
 				style={[
 					styles.section,
-					{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
+					{ borderColor: palette.border },
 				]}
 			>
 				<TextField
@@ -100,152 +118,260 @@ export function CardForm({
 					placeholder="0123"
 					keyboardType="number-pad"
 				/>
-				<TextField
-					label="Billing day"
-					value={draft.billingDay}
-					onChangeText={(value) =>
-						update({ billingDay: value.replace(/[^0-9]/g, "").slice(0, 2) })
-					}
-					placeholder="1-31"
-					hint="Optional. Supports 1-31. Short months clamp to the nearest valid date."
-					keyboardType="number-pad"
-				/>
-				<TextField
-					label="Due day"
-					value={draft.dueDay}
-					onChangeText={(value) =>
-						update({ dueDay: value.replace(/[^0-9]/g, "").slice(0, 2) })
-					}
-					placeholder="1-31"
-					hint="Required. Supports 1-31 with nearest-valid-date handling."
-					keyboardType="number-pad"
-				/>
+			</View>
+
+			{/* Dates */}
+			<View
+				style={[
+					styles.section,
+					{ borderColor: palette.border },
+				]}
+			>
+				<Text style={[styles.sectionTitle, { color: palette.text }]}>
+					Dates
+				</Text>
+				<View style={styles.row}>
+					<View style={styles.field}>
+						<TextField
+							label="Billing day"
+							value={draft.billingDay}
+							onChangeText={(value) =>
+								update({
+									billingDay: value.replace(/[^0-9]/g, "").slice(0, 2),
+								})
+							}
+							placeholder="1-31"
+							hint="Optional"
+							keyboardType="number-pad"
+						/>
+					</View>
+					<View style={styles.field}>
+						<TextField
+							label="Due day"
+							value={draft.dueDay}
+							onChangeText={(value) =>
+								update({
+									dueDay: value.replace(/[^0-9]/g, "").slice(0, 2),
+								})
+							}
+							placeholder="1-31"
+							hint="Required"
+							keyboardType="number-pad"
+						/>
+					</View>
+				</View>
+			</View>
+
+			{/* Tags + note */}
+			<View
+				style={[
+					styles.section,
+					{ borderColor: palette.border },
+				]}
+			>
 				<TextField
 					label="Tags"
 					value={draft.tags}
 					onChangeText={(value) => update({ tags: value })}
 					placeholder="travel, backup, monthly"
-					hint="Comma-separated card tags used for filtering."
+					hint="Comma-separated"
+				/>
+				<TextField
+					label="Note"
+					value={draft.note}
+					onChangeText={(value) => update({ note: value })}
+					placeholder="Cancellation link, phone number, or reminder"
+					multiline
+					minHeight={72}
 				/>
 			</View>
 
+			{/* Preferences */}
 			<View
 				style={[
 					styles.section,
-					{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
+					{ borderColor: palette.border },
 				]}
 			>
 				<Text style={[styles.sectionTitle, { color: palette.text }]}>
 					Preferences
 				</Text>
-				<Button
-					title={`Notifications: ${draft.notificationsEnabled ? "on" : "off"}`}
-					variant="secondary"
+				<PressableScale
 					onPress={() =>
 						update({ notificationsEnabled: !draft.notificationsEnabled })
 					}
-				/>
-				<Text style={[styles.helper, { color: palette.muted }]}>
-					If device permission is denied, reminders still appear in-app.
-				</Text>
-				<Button
-					title={`Extended tracking: ${draft.extendedTrackingEnabled ? "on" : "off"}`}
-					variant="secondary"
-					onPress={() =>
-						update({ extendedTrackingEnabled: !draft.extendedTrackingEnabled })
-					}
-				/>
-				<Text style={[styles.helper, { color: palette.muted }]}>
-					Keep this off unless you want to manage a manual follow-up window
-					yourself.
-				</Text>
-			</View>
-
-			<View
-				style={[
-					styles.section,
-					{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
-				]}
-			>
-				<Text style={[styles.sectionTitle, { color: palette.text }]}>
-					Provider template
-				</Text>
-				<Text style={[styles.helper, { color: palette.muted }]}>
-					Only Amex is included in v1. It is advisory only.
-				</Text>
-				{providerTemplates.map((item) => (
-					<Button
-						key={item.id}
-						title={`${draft.providerTemplateId === item.id ? "Using" : "Use"} ${item.provider} template`}
-						variant={draft.providerTemplateId === item.id ? "primary" : "secondary"}
-						onPress={() =>
-							update({
-								provider: item.provider,
-								providerTemplateId:
-									draft.providerTemplateId === item.id ? undefined : item.id,
-								paidAmountNote: item.hint,
-							})
-						}
-					/>
-				))}
-				{template ? (
+					contentStyle={[
+						styles.toggle,
+						{ borderColor: palette.border },
+					]}
+				>
+					<Text style={[styles.toggleLabel, { color: palette.text }]}>
+						Notifications
+					</Text>
 					<View
 						style={[
-							styles.subSection,
-							{ backgroundColor: palette.cardAlt, borderColor: palette.border },
+							styles.toggleDot,
+							{
+								backgroundColor: draft.notificationsEnabled
+									? palette.success
+									: palette.border,
+							},
 						]}
-					>
-						<Text style={[styles.helper, { color: palette.text }]}>
-							{template.title}
-						</Text>
-						<Text style={[styles.helper, { color: palette.muted }]}>
-							{template.hint}
-						</Text>
-						<Text style={[styles.warning, { color: palette.warning }]}>
-							{template.disclaimer}
-						</Text>
-					</View>
-				) : null}
+					/>
+				</PressableScale>
+
+				<PressableScale
+					onPress={handleExtendedToggle}
+					contentStyle={[
+						styles.toggle,
+						{ borderColor: palette.border },
+					]}
+				>
+					<Text style={[styles.toggleLabel, { color: palette.text }]}>
+						Extended tracking
+					</Text>
+					<View
+						style={[
+							styles.toggleDot,
+							{
+								backgroundColor: draft.extendedTrackingEnabled
+									? palette.success
+									: palette.border,
+							},
+						]}
+					/>
+				</PressableScale>
+				<Text style={[styles.hint, { color: palette.muted }]}>
+					Keep this off unless you want to manage a manual follow-up window.
+				</Text>
 			</View>
 
+			{/* Extended tracking warning modal (inline) */}
+			{showWarning ? (
+				<View
+					style={[
+						styles.warningSection,
+						{ backgroundColor: palette.warningSoft, borderColor: palette.warning },
+					]}
+				>
+					<Text style={[styles.warningTitle, { color: palette.text }]}>
+						Extended tracking acknowledgment
+					</Text>
+					<Text style={[styles.warningBody, { color: palette.body }]}>
+						{EXTENDED_WARNING}
+					</Text>
+					<Text style={[styles.warningBody, { color: palette.muted }]}>
+						{EXTENDED_RESPONSIBILITY}
+					</Text>
+					<View style={styles.warningActions}>
+						<Button
+							title="I understand, enable it"
+							variant="primary"
+							compact
+							onPress={acceptWarning}
+							style={{ flex: 1 }}
+						/>
+						<Button
+							title="Cancel"
+							variant="secondary"
+							compact
+							onPress={() => setShowWarning(false)}
+							style={{ flex: 1 }}
+						/>
+					</View>
+				</View>
+			) : null}
+
+			{/* Extended tracking fields */}
 			{draft.extendedTrackingEnabled ? (
 				<View
 					style={[
 						styles.section,
-						{ backgroundColor: palette.card, borderColor: palette.border, borderBottomColor: palette.border3D },
+						{ borderColor: palette.border },
 					]}
 				>
 					<Text style={[styles.sectionTitle, { color: palette.text }]}>
 						Extended tracking
 					</Text>
+
+					{/* Provider template selector */}
+					<Text style={[styles.hint, { color: palette.muted }]}>
+						Provider template (advisory only)
+					</Text>
+					{providerTemplates.map((item) => (
+						<PressableScale
+							key={item.id}
+							onPress={() =>
+								update({
+									provider: item.provider,
+									providerTemplateId:
+										draft.providerTemplateId === item.id
+											? undefined
+											: item.id,
+									paidAmountNote: item.hint,
+								})
+							}
+							contentStyle={[
+								styles.templateChip,
+								{
+									backgroundColor:
+										draft.providerTemplateId === item.id
+											? palette.primary
+											: "transparent",
+									borderColor:
+										draft.providerTemplateId === item.id
+											? palette.primary
+											: palette.border,
+								},
+							]}
+						>
+							<Text
+								style={[
+									styles.templateLabel,
+									{
+										color:
+											draft.providerTemplateId === item.id
+												? palette.onPrimary
+												: palette.text,
+									},
+								]}
+							>
+								{item.provider} template
+							</Text>
+						</PressableScale>
+					))}
+
+					{template ? (
+						<View
+							style={[
+								styles.templateDetail,
+								{ backgroundColor: palette.surface, borderColor: palette.border },
+							]}
+						>
+							<Text style={[styles.templateHint, { color: palette.body }]}>
+								{template.hint}
+							</Text>
+							<Text style={[styles.hint, { color: palette.warning }]}>
+								{template.disclaimer}
+							</Text>
+						</View>
+					) : null}
+
 					<TextField
 						label="Manual extended date"
 						value={draft.extendedDate}
 						onChangeText={(value) => update({ extendedDate: value })}
 						placeholder="2026-05-28"
-						hint="Use a real calendar date in YYYY-MM-DD format. The app creates a 1-day-before reminder and an on-date reminder."
+						hint="YYYY-MM-DD format. Creates reminders 1 day before and on the date."
 					/>
 					<TextField
 						label="Paid amount or support note"
 						value={draft.paidAmountNote}
 						onChangeText={(value) => update({ paidAmountNote: value })}
-						placeholder="Manual note about minimum payment or support guidance"
+						placeholder="Note about minimum payment or support guidance"
 						multiline
-						minHeight={96}
+						minHeight={72}
 					/>
-					<Button
-						title={`Extended tracking acknowledgment: ${draft.acknowledgmentAccepted ? "accepted" : "not accepted"}`}
-						variant={draft.acknowledgmentAccepted ? "success" : "secondary"}
-						onPress={() =>
-							update({ acknowledgmentAccepted: !draft.acknowledgmentAccepted })
-						}
-					/>
-					<Text style={[styles.warning, { color: palette.text }]}>
-						{EXTENDED_TRACKING_WARNING}
-					</Text>
-					<Text style={[styles.helper, { color: palette.muted }]}>
-						{EXTENDED_TRACKING_RESPONSIBILITY}
-					</Text>
 				</View>
 			) : null}
 
@@ -261,7 +387,6 @@ export function CardForm({
 					disabled={isSaving}
 					style={{ flex: 1 }}
 				/>
-
 				{onDelete ? (
 					<Button
 						title="Delete card"
@@ -276,53 +401,96 @@ export function CardForm({
 
 const styles = StyleSheet.create({
 	content: {
-		padding: spacing.xl,
-		gap: spacing.lg,
+		padding: spacing.lg,
+		gap: spacing.md,
 		paddingBottom: 120,
 	},
+	headerSection: {
+		gap: spacing.xxs,
+	},
+	formTitle: {
+		...typeTokens.displayMd,
+	},
+	formSubtitle: {
+		...typeTokens.body,
+	},
 	section: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.xl,
-		padding: spacing.xl,
-		gap: spacing.md,
-	},
-	subSection: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.lg,
-		padding: spacing.md,
-		gap: 8,
-	},
-	title: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 24,
-		lineHeight: 30,
+		borderBottomWidth: hairline,
+		paddingBottom: spacing.md,
+		gap: spacing.sm,
 	},
 	sectionTitle: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 18,
-		lineHeight: 24,
+		...typeTokens.titleSm,
 	},
-	helper: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 14,
-		lineHeight: 22,
+	row: {
+		flexDirection: "row",
+		gap: spacing.sm,
 	},
-	warning: {
-		fontFamily: "Nunito_700Bold",
-		fontSize: 14,
-		lineHeight: 22,
+	field: {
+		flex: 1,
+	},
+	hint: {
+		...typeTokens.legal,
+	},
+	toggle: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		borderWidth: hairline,
+		borderRadius: radius.sm,
+		paddingHorizontal: spacing.md,
+		paddingVertical: 14,
+	},
+	toggleLabel: {
+		...typeTokens.body,
+	},
+	toggleDot: {
+		width: 10,
+		height: 10,
+		borderRadius: 5,
+	},
+	warningSection: {
+		borderWidth: hairline,
+		borderRadius: radius.md,
+		padding: spacing.md,
+		gap: spacing.sm,
+	},
+	warningTitle: {
+		...typeTokens.titleSm,
+	},
+	warningBody: {
+		...typeTokens.body,
+	},
+	warningActions: {
+		flexDirection: "row",
+		gap: spacing.xs,
+	},
+	templateChip: {
+		borderWidth: hairline,
+		borderRadius: radius.sm,
+		paddingHorizontal: spacing.md,
+		paddingVertical: 12,
+		alignItems: "center",
+	},
+	templateLabel: {
+		...typeTokens.caption,
+	},
+	templateDetail: {
+		borderWidth: hairline,
+		borderRadius: radius.sm,
+		padding: spacing.sm,
+		gap: 6,
+	},
+	templateHint: {
+		...typeTokens.body,
 	},
 	actions: {
 		flexDirection: "row",
 		gap: spacing.sm,
-		marginTop: spacing.md,
+		marginTop: spacing.sm,
 	},
 	error: {
-		fontFamily: "Nunito_700Bold",
-		fontSize: 14,
-		lineHeight: 22,
+		...typeTokens.body,
 		textAlign: "center",
 	},
 });

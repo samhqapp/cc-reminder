@@ -1,16 +1,21 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+	ScrollView,
+	StyleSheet,
+	Text,
+	TextInput,
+	View,
+} from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AddCardSheet } from "@/components/card/AddCardSheet";
 import { NoteSheet } from "@/components/card/NoteSheet";
 import { useColorScheme } from "@/components/useColorScheme";
 import { FloatingAddButton } from "@/components/ui/FloatingAddButton";
-import { Button } from "@/components/ui/Button";
+import { PressableScale } from "@/components/ui/PressableScale";
 import Colors from "@/constants/Colors";
-import { radius, shadow, spacing, thickness } from "@/constants/Tokens";
+import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
 import { findCompanyPreset } from "@/data/companyPresets";
 import { useCards } from "@/hooks/useCards";
 import type { Card } from "@/types/domain";
@@ -20,16 +25,33 @@ export default function CardsScreen() {
 	const colorScheme = useColorScheme() ?? "light";
 	const palette = Colors[colorScheme];
 	const insets = useSafeAreaInsets();
-	const { cards, createCard, defaultDraft } = useCards();
+	const { cards, createCard, defaultDraft, tagPool } = useCards();
 	const [isAddOpen, setIsAddOpen] = useState(false);
 	const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [activeTag, setActiveTag] = useState<string | null>(null);
 
 	const starterDraft = useMemo(() => defaultDraft(), [defaultDraft]);
 
-	// Match the tab bar's bottom offset so FAB always floats above it
-	const TAB_HEIGHT = 64;
-	const tabBottom = insets.bottom + (Platform.OS === "android" ? 10 : 12);
-	const fabBottom = tabBottom + TAB_HEIGHT + 16;
+	const filteredCards = useMemo(() => {
+		let result = cards;
+		if (activeTag) {
+			result = result.filter((c) => c.tags.includes(activeTag));
+		}
+		const q = searchQuery.trim().toLowerCase();
+		if (q) {
+			result = result.filter(
+				(c) =>
+					c.name.toLowerCase().includes(q) ||
+					c.last4.includes(q) ||
+					c.provider.toLowerCase().includes(q) ||
+					c.tags.some((t) => t.toLowerCase().includes(q)),
+			);
+		}
+		return result;
+	}, [cards, searchQuery, activeTag]);
+
+	const fabBottom = insets.bottom + 52 + 16;
 
 	return (
 		<SafeAreaView
@@ -43,39 +65,118 @@ export default function CardsScreen() {
 			>
 				<Text style={[styles.pageTitle, { color: palette.text }]}>Cards</Text>
 
-				{cards.length === 0 ? (
+				{/* Search */}
+				<View
+					style={[
+						styles.searchBar,
+						{ backgroundColor: palette.cardAlt, borderColor: palette.border },
+					]}
+				>
+					<Text style={[styles.searchIcon, { color: palette.muted }]}>
+						&#x2315;
+					</Text>
+					<TextInput
+						style={[styles.searchInput, { color: palette.text }]}
+						placeholder="Search name, last 4, provider, tag..."
+						placeholderTextColor={palette.muted}
+						value={searchQuery}
+						onChangeText={setSearchQuery}
+						returnKeyType="search"
+					/>
+					{searchQuery ? (
+						<PressableScale
+							onPress={() => setSearchQuery("")}
+							contentStyle={styles.clearBtn}
+						>
+							<Text style={{ color: palette.muted, fontSize: 16 }}>x</Text>
+						</PressableScale>
+					) : null}
+				</View>
+
+				{/* Tag filter chips */}
+				{tagPool.length > 0 ? (
+					<ScrollView
+						horizontal
+						showsHorizontalScrollIndicator={false}
+						contentContainerStyle={styles.tagRow}
+					>
+						{activeTag ? (
+							<PressableScale
+								onPress={() => setActiveTag(null)}
+								contentStyle={[
+									styles.tagChip,
+									{ borderColor: palette.border },
+								]}
+							>
+								<Text style={[styles.tagLabel, { color: palette.muted }]}>
+									All
+								</Text>
+							</PressableScale>
+						) : null}
+						{tagPool.map((tag) => {
+							const active = activeTag === tag;
+							return (
+								<PressableScale
+									key={tag}
+									onPress={() => setActiveTag(active ? null : tag)}
+									contentStyle={[
+										styles.tagChip,
+										{
+											backgroundColor: active ? palette.primary : "transparent",
+											borderColor: active ? palette.primary : palette.border,
+										},
+									]}
+								>
+									<Text
+										style={[
+											styles.tagLabel,
+											{ color: active ? palette.onPrimary : palette.body },
+										]}
+									>
+										{tag}
+									</Text>
+								</PressableScale>
+							);
+						})}
+					</ScrollView>
+				) : null}
+
+				{filteredCards.length === 0 ? (
 					<View
 						style={[
 							styles.emptyCard,
-							{ backgroundColor: palette.card, borderColor: palette.borderSoft },
+							{ backgroundColor: palette.surface, borderColor: palette.border },
 						]}
 					>
 						<Text style={[styles.emptyTitle, { color: palette.text }]}>
-							No cards yet
+							{cards.length === 0 ? "No cards yet" : "No matches"}
 						</Text>
 						<Text style={[styles.emptyBody, { color: palette.muted }]}>
-							Hit the floating plus button to save your first subscription card.
+							{cards.length === 0
+								? "Tap the + button to save your first subscription card."
+								: "Try a different search or clear the filter."}
 						</Text>
 					</View>
 				) : null}
 
 				<View style={styles.list}>
-					{cards.map((card) => {
+					{filteredCards.map((card) => {
 						const companyTheme = findCompanyPreset(
 							card.provider,
 							card.companyKey,
 						);
 						const nextRenewal = getNextOccurrence(card.dueDay);
+						const dayLabel = relativeDayLabel(nextRenewal);
 
 						return (
-							<View
+							<PressableScale
 								key={card.id}
-								style={[
+								onPress={() => router.push(`/card/${card.id}` as never)}
+								contentStyle={[
 									styles.card,
 									{
 										backgroundColor: palette.card,
 										borderColor: palette.border,
-										borderBottomColor: palette.border3D,
 									},
 								]}
 							>
@@ -84,53 +185,63 @@ export default function CardsScreen() {
 										style={[
 											styles.logoBadge,
 											{
-												backgroundColor: companyTheme?.accent ?? palette.primary,
+												backgroundColor:
+													companyTheme?.accent ?? palette.primary,
 											},
 										]}
 									>
-										<Text
-											style={[
-												styles.logoLabel,
-												{ color: palette.onPrimary },
-											]}
-										>
+										<Text style={styles.logoLabel}>
 											{card.provider.slice(0, 2).toUpperCase()}
 										</Text>
 									</View>
 									<View style={styles.cardTextGroup}>
-										<Text style={[styles.cardTitle, { color: palette.text }]}>
+										<Text
+											style={[styles.cardTitle, { color: palette.text }]}
+											numberOfLines={1}
+										>
 											{card.name}
 										</Text>
 										<Text style={[styles.cardMeta, { color: palette.muted }]}>
 											{card.provider} · •••• {card.last4}
 										</Text>
 									</View>
+									<View
+										style={[
+											styles.intentDot,
+											{
+												backgroundColor:
+													card.intent === "cancel"
+														? palette.danger
+														: palette.success,
+											},
+										]}
+									/>
 								</View>
 
-								<View style={styles.cardInfo}>
-									<Text style={[styles.renewalLabel, { color: palette.text }]}>
-										Next renewal {relativeDayLabel(nextRenewal)}
+								<View style={[styles.cardFooter, { borderTopColor: palette.border }]}>
+									<Text style={[styles.renewalLabel, { color: palette.body }]}>
+										{dayLabel}
 									</Text>
-									<Text style={[styles.renewalMeta, { color: palette.muted }]}>
+									<Text style={[styles.renewalDate, { color: palette.muted }]}>
 										{formatFullDate(nextRenewal)}
 									</Text>
 								</View>
 
-								<View style={styles.cardActions}>
-									<Button 
-										title="Details" 
-										variant="secondary" 
-										style={{ flex: 1 }}
-										onPress={() => router.push(`/card/${card.id}` as never)}
-									/>
-									<Button 
-										title={card.intent === "cancel" ? "Cancel" : "Keep"} 
-										variant={card.intent === "cancel" ? "danger" : "primary"}
-										style={{ flex: 1 }}
-										onPress={() => setSelectedCard(card)}
-									/>
-								</View>
-							</View>
+								{card.tags.length > 0 ? (
+									<View style={styles.cardTags}>
+										{card.tags.map((tag) => (
+											<View
+												key={tag}
+												style={[styles.cardTagChip, { backgroundColor: palette.surface }]}
+											>
+												<Text style={[styles.cardTagLabel, { color: palette.muted }]}>
+													{tag}
+												</Text>
+											</View>
+										))}
+									</View>
+								) : null}
+							</PressableScale>
 						);
 					})}
 				</View>
@@ -168,84 +279,128 @@ const styles = StyleSheet.create({
 	content: {
 		padding: spacing.lg,
 		paddingBottom: 120,
-		gap: spacing.lg,
+		gap: spacing.md,
 	},
 	pageTitle: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 32,
-		marginBottom: 8,
+		...typeTokens.displayLg,
+		marginBottom: spacing.xs,
+	},
+	searchBar: {
+		flexDirection: "row",
+		alignItems: "center",
+		borderWidth: hairline,
+		borderRadius: radius.sm,
+		paddingHorizontal: spacing.sm,
+		height: 44,
+		gap: spacing.xs,
+	},
+	searchIcon: {
+		fontSize: 18,
+	},
+	searchInput: {
+		flex: 1,
+		...typeTokens.body,
+		paddingVertical: 0,
+	},
+	clearBtn: {
+		padding: 4,
+	},
+	tagRow: {
+		flexDirection: "row",
+		gap: spacing.xs,
+		paddingVertical: 2,
+	},
+	tagChip: {
+		borderWidth: hairline,
+		borderRadius: radius.pill,
+		paddingHorizontal: spacing.sm,
+		paddingVertical: 6,
+	},
+	tagLabel: {
+		...typeTokens.caption,
 	},
 	emptyCard: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.xl,
-		padding: spacing.xl,
-		gap: spacing.sm,
+		borderWidth: hairline,
+		borderRadius: radius.lg,
+		padding: spacing.lg,
+		gap: spacing.xs,
 	},
 	emptyTitle: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 20,
+		...typeTokens.titleMd,
 	},
 	emptyBody: {
-		fontFamily: "Nunito_700Bold",
-		fontSize: 16,
+		...typeTokens.body,
 	},
 	list: {
-		gap: spacing.md,
+		gap: spacing.sm,
 	},
 	card: {
-		borderWidth: thickness.border,
-		borderBottomWidth: thickness.border3D,
-		borderRadius: radius.xl,
-		padding: spacing.lg,
-		gap: spacing.md,
+		borderWidth: hairline,
+		borderRadius: radius.lg,
+		padding: spacing.md,
+		gap: spacing.sm,
 	},
 	cardHeader: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: spacing.md,
+		gap: spacing.sm,
 	},
 	logoBadge: {
-		width: 48,
-		height: 48,
+		width: 40,
+		height: 40,
 		borderRadius: radius.md,
 		alignItems: "center",
 		justifyContent: "center",
 	},
 	logoLabel: {
-		fontFamily: "Nunito_900Black",
-		fontSize: 16,
+		color: "#ffffff",
+		fontSize: 13,
+		fontWeight: "500",
+		letterSpacing: 0.5,
 	},
 	cardTextGroup: {
 		flex: 1,
 	},
 	cardTitle: {
-		fontFamily: "Nunito_800ExtraBold",
-		fontSize: 20,
-		marginBottom: 2,
+		...typeTokens.titleSm,
+		marginBottom: 1,
 	},
 	cardMeta: {
-		fontFamily: "Nunito_700Bold",
-		fontSize: 14,
+		...typeTokens.legal,
 	},
-	cardInfo: {
-		gap: 2,
+	intentDot: {
+		width: 8,
+		height: 8,
+		borderRadius: 4,
+	},
+	cardFooter: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		borderTopWidth: hairline,
+		paddingTop: spacing.xs,
 	},
 	renewalLabel: {
-		fontFamily: "Nunito_700Bold",
-		fontSize: 16,
+		...typeTokens.caption,
 	},
-	renewalMeta: {
-		fontFamily: "Nunito_600SemiBold",
-		fontSize: 14,
+	renewalDate: {
+		...typeTokens.legal,
 	},
-	cardActions: {
+	cardTags: {
 		flexDirection: "row",
-		gap: spacing.sm,
-		marginTop: spacing.xs,
+		flexWrap: "wrap",
+		gap: 6,
+	},
+	cardTagChip: {
+		borderRadius: radius.xs,
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+	},
+	cardTagLabel: {
+		...typeTokens.legal,
 	},
 	fabWrap: {
 		position: "absolute",
-		right: spacing.xl,
+		right: spacing.lg,
 	},
 });

@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { radius, shadow, spacing } from "@/constants/Tokens";
+import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
 
 type Props = PropsWithChildren<{
 	visible: boolean;
@@ -55,9 +55,7 @@ export function BottomSheet({
 							{
 								backgroundColor: palette.card,
 								borderColor: palette.border,
-								shadowColor: palette.accent,
 							},
-							shadow.soft,
 						]}
 					>
 						<View style={styles.header}>
@@ -65,7 +63,7 @@ export function BottomSheet({
 								<View
 									style={[
 										styles.grabber,
-										{ backgroundColor: palette.borderSoft },
+										{ backgroundColor: palette.border },
 									]}
 								/>
 							</View>
@@ -99,7 +97,8 @@ const styles = StyleSheet.create({
 	sheet: {
 		borderTopLeftRadius: radius.xl,
 		borderTopRightRadius: radius.xl,
-		borderWidth: 1,
+		borderWidth: hairline,
+		borderBottomWidth: 0,
 		paddingHorizontal: spacing.lg,
 		paddingTop: spacing.sm,
 		paddingBottom: spacing.lg,
@@ -113,18 +112,15 @@ const styles = StyleSheet.create({
 		paddingBottom: spacing.xs,
 	},
 	grabber: {
-		width: 56,
-		height: 6,
-		borderRadius: 999,
+		width: 40,
+		height: 4,
+		borderRadius: 2,
 	},
 	title: {
-		fontSize: 22,
-		lineHeight: 28,
-		fontWeight: "800",
+		...typeTokens.titleMd,
 	},
 	subtitle: {
-		fontSize: 14,
-		lineHeight: 20,
+		...typeTokens.body,
 	},
 	body: {
 		gap: spacing.md,

@@ -14,7 +14,7 @@ jest.mock("@/utils/reminders", () => ({
 }));
 
 describe("CardsScreen", () => {
-	it("shows grouped cards and opens the add-card bottom sheet", async () => {
+	it("shows cards and opens the add-card bottom sheet", async () => {
 		const mockCreateCard = jest.fn(async () => null);
 		mockUseCards.mockReturnValue({
 			cards: [
@@ -42,18 +42,18 @@ describe("CardsScreen", () => {
 					groupName: "",
 					note: "",
 				}),
+			tagPool: [],
 		});
 
 		render(<CardsScreen />);
 
-		expect(screen.getByText("Streaming")).toBeOnTheScreen();
-		expect(screen.getByText("Work")).toBeOnTheScreen();
 		expect(screen.getByText("Netflix Family")).toBeOnTheScreen();
+		expect(screen.getByText("Figma Pro")).toBeOnTheScreen();
 
 		fireEvent.press(screen.getByText("+"));
 
 		expect(
-			screen.getByText("Quick setup for subscription reminders and cancellation notes."),
+			screen.getByText("Quick setup for subscription reminders."),
 		).toBeOnTheScreen();
 
 		fireEvent.changeText(screen.getByPlaceholderText("Netflix"), "Spotify");
@@ -79,6 +79,7 @@ describe("CardsScreen", () => {
 			cards: [],
 			createCard: jest.fn(async () => null),
 			defaultDraft: () => makeDraft({ name: "", provider: "", last4: "", dueDay: "" }),
+			tagPool: [],
 		});
 
 		render(<CardsScreen />);

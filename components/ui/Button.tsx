@@ -1,8 +1,8 @@
-import { StyleSheet, Text, ViewStyle, StyleProp } from "react-native";
+import { StyleSheet, Text, type ViewStyle, type StyleProp } from "react-native";
 import { PressableScale } from "./PressableScale";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { radius, thickness } from "@/constants/Tokens";
+import { hairline, radius, type as typeTokens } from "@/constants/Tokens";
 
 export type ButtonVariant = "primary" | "secondary" | "success" | "danger";
 
@@ -11,6 +11,7 @@ type Props = {
 	onPress: () => void;
 	variant?: ButtonVariant;
 	disabled?: boolean;
+	compact?: boolean;
 	style?: StyleProp<ViewStyle>;
 };
 
@@ -19,27 +20,28 @@ export function Button({
 	onPress,
 	variant = "primary",
 	disabled,
+	compact,
 	style,
 }: Props) {
 	const colorScheme = useColorScheme() ?? "light";
 	const palette = Colors[colorScheme];
 
-	let backgroundColor = palette.primary;
-	let borderColor = palette.primaryBorder;
-	let textColor = palette.onPrimary;
+	let backgroundColor: string = palette.primary;
+	let borderColor: string = palette.primary;
+	let textColor: string = palette.onPrimary;
 
 	if (variant === "secondary") {
 		backgroundColor = "transparent";
-		borderColor = palette.border3D;
-		textColor = palette.muted;
+		borderColor = palette.border;
+		textColor = palette.text;
 	} else if (variant === "success") {
 		backgroundColor = palette.success;
-		borderColor = palette.successBorder;
-		textColor = palette.onPrimary;
+		borderColor = palette.success;
+		textColor = "#ffffff";
 	} else if (variant === "danger") {
 		backgroundColor = palette.danger;
-		borderColor = palette.dangerBorder;
-		textColor = palette.onPrimary;
+		borderColor = palette.danger;
+		textColor = "#ffffff";
 	}
 
 	return (
@@ -48,11 +50,11 @@ export function Button({
 			disabled={disabled}
 			contentStyle={[
 				styles.button,
+				compact && styles.compact,
 				{
 					backgroundColor,
-					borderColor: variant === "secondary" ? palette.border : borderColor,
-					borderBottomColor: borderColor,
-					borderBottomWidth: thickness.border3D,
+					borderColor,
+					opacity: disabled ? 0.5 : 1,
 				},
 				style,
 			]}
@@ -64,19 +66,19 @@ export function Button({
 
 const styles = StyleSheet.create({
 	button: {
-		borderWidth: thickness.border,
-		borderRadius: radius.pill,
+		borderWidth: hairline,
+		borderRadius: radius.lg,
 		paddingHorizontal: 24,
-		paddingVertical: 16,
+		paddingVertical: 14,
 		alignItems: "center",
 		justifyContent: "center",
 		flexDirection: "row",
 	},
+	compact: {
+		paddingHorizontal: 16,
+		paddingVertical: 10,
+	},
 	label: {
-		fontSize: 16,
-		lineHeight: 20,
-		fontWeight: "800",
-		textTransform: "uppercase",
-		letterSpacing: 0.5,
+		...typeTokens.button,
 	},
 });
