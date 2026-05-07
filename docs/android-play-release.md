@@ -13,7 +13,7 @@ This repo uses the Expo managed release path for Android. The generated `android
 | Android versionCode | `2` |
 | Play track | Internal testing |
 | Release status | Active internal testing release |
-| Pricing | Paid, USD 5.00 |
+| Pricing | Paid. Base price set from USD 5.00; United States row shows USD 4.99 after Play tier rounding. |
 | Category | Finance |
 | Ads | No |
 | Target audience | Adults and general audience. Not directed at children. |
@@ -70,7 +70,7 @@ Do not grant API permissions, download a service account JSON key, upload a buil
 | Tester join link | `https://play.google.com/apps/internaltest/4700998914485383299` |
 | AAB uploaded | `.release/cc-reminder-android.aab` |
 | Deobfuscation file | Not uploaded. Play shows a non-blocking warning for version code `2` |
-| Paid monetization | Blocked until the personal developer account has a merchant account |
+| Paid monetization | Merchant signup completed by user. Paid pricing saved in Play Console on May 7, 2026 for 176 countries / regions. Base price was set from USD 5.00; United States row shows USD 4.99 after Play tier rounding. |
 | Verified package key saved | Not required during this upload |
 | Service account permissions granted | Not configured |
 | Service account JSON downloaded | Not configured |

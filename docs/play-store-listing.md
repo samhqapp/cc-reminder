@@ -8,12 +8,12 @@
 | Short description | Local-first credit card due-date reminders. |
 | Full description | See `fastlane/metadata/android/en-US/full_description.txt`. |
 | Category | Finance |
-| Pricing | Paid, USD 5.00 |
+| Pricing | Paid. Base price set from USD 5.00; United States row shows USD 4.99 after Play tier rounding. |
 | Ads | No |
 | Target audience | Adults and general audience |
 | Directed at children | No |
 
-Paid app monetization is intended at USD 5.00, but Play Console currently requires the personal developer account to set up a merchant account before monetization can be completed.
+Paid app monetization is configured in Play Console. The base price was set from USD 5.00 across 176 countries / regions; Play's price-tier rounding shows the United States row as USD 4.99.
 
 ## Content Rating Draft
 
