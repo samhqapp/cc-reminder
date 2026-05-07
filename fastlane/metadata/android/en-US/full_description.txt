@@ -1,0 +1,18 @@
+CC Reminder helps you track credit card due dates without creating an account or syncing data to a backend.
+
+Add each card by nickname, provider, and last 4 digits only. Save billing and due days, tags, notes, reminder preferences, and payment reminder state so you can see what is due, what is overdue, and what has already been settled.
+
+Privacy is intentionally simple:
+
+No full card numbers.
+No CVV.
+No expiry dates.
+No payment credentials.
+No bank login.
+No bank connection.
+No account required.
+No backend or cloud sync found in the app source.
+
+Reminder data is stored locally on your device using AsyncStorage. Notifications are local notifications scheduled on the device.
+
+CC Reminder is a utility for remembering due dates. It does not make payments, offer lending, provide trading, perform gambling, access bank accounts, or make credit decisions.

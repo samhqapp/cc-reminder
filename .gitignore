@@ -14,10 +14,13 @@ expo-env.d.ts
 .kotlin/
 *.orig.*
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
 *.mobileprovision
+android/key.properties
+android/key.properties.local
 
 # Metro
 .metro-health-check*
@@ -33,6 +36,10 @@ yarn-error.*
 
 # local env files
 .env*.local
+credentials.json
+google-service-account*.json
+play-service-account*.json
+.release/
 
 # typescript
 *.tsbuildinfo

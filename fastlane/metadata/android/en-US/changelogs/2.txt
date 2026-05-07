@@ -1,0 +1,5 @@
+Version 1.0.1 internal testing prep:
+
+Prepare the Android App Bundle release path for Play internal testing.
+Add Play Store metadata, privacy policy draft, and Data Safety draft.
+Keep the app local-first with last 4 digits only, local storage, and local notifications.

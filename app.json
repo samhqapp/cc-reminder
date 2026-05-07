@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "cc-reminder",
+    "name": "CC Reminder",
+    "owner": "surajmanalcell",
     "slug": "cc-reminder",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "ccreminder",
@@ -19,6 +20,7 @@
     },
     "android": {
       "package": "com.surajmandal.ccreminder",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#181d26"
@@ -37,6 +39,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "61fb4a83-cabe-411b-bf7b-4c600400fc80"
+      }
     }
   }
 }

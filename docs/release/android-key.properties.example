@@ -1,0 +1,4 @@
+storeFile=.release/cc-reminder-upload.jks
+storePassword=replace-with-keystore-password
+keyAlias=cc-reminder-upload
+keyPassword=replace-with-key-password
