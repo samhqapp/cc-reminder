@@ -13,6 +13,8 @@
 | Target audience | Adults and general audience |
 | Directed at children | No |
 
+Paid app monetization is intended at USD 5.00, but Play Console currently requires the personal developer account to set up a merchant account before monetization can be completed.
+
 ## Content Rating Draft
 
 | Topic | Draft answer |
@@ -35,4 +37,4 @@
 | Tablet screenshots | `store-assets/android/en-US/tablet-screenshots/` |
 | Feature graphic | `store-assets/android/en-US/feature-graphic/` |
 
-Do not submit store listing or policy forms without manual confirmation.
+User confirmed Play declarations directly in Console for the internal testing release. Keep production listing and policy submissions manually reviewed before public release.

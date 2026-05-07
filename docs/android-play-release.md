@@ -12,7 +12,7 @@ This repo uses the Expo managed release path for Android. The generated `android
 | App version | `1.0.1` |
 | Android versionCode | `2` |
 | Play track | Internal testing |
-| Release status | Draft |
+| Release status | Active internal testing release |
 | Pricing | Paid, USD 5.00 |
 | Category | Finance |
 | Ads | No |
@@ -62,14 +62,19 @@ Do not grant API permissions, download a service account JSON key, upload a buil
 
 | Gate | Status |
 |---|---|
-| Personal developer account selected | EAS CLI verified as `surajmanalcell <surajmandalcell@gmail.com>`; Play Console still must be verified in Chrome profile `Default` |
-| Personal Play Console developer account only | Required |
-| Package `com.surajmandal.ccreminder` created or selected | Must be verified |
-| Verified package key saved | Stop for confirmation first |
-| Service account permissions granted | Stop for confirmation first |
-| Service account JSON downloaded | Stop for confirmation first |
-| Policy forms submitted | Stop for confirmation first |
-| AAB uploaded | Stop for confirmation first |
+| Personal developer account selected | Verified in Play Console as `surajmandalcell`, developer ID `8507532153395963467` |
+| Personal Play Console developer account only | Verified. Do not use MealVue, MealLens, or `pregso` |
+| Package `com.surajmandal.ccreminder` created or selected | Verified in Play Console |
+| Internal testing release | Published as `1.0.1 (2)` on May 7, 2026 |
+| Internal tester list | `cc-reminder-internal`, 1 user |
+| Tester join link | `https://play.google.com/apps/internaltest/4700998914485383299` |
+| AAB uploaded | `.release/cc-reminder-android.aab` |
+| Deobfuscation file | Not uploaded. Play shows a non-blocking warning for version code `2` |
+| Paid monetization | Blocked until the personal developer account has a merchant account |
+| Verified package key saved | Not required during this upload |
+| Service account permissions granted | Not configured |
+| Service account JSON downloaded | Not configured |
+| Policy forms submitted | User confirmed outside this repo workflow |
 
 ## Source Evidence For Data Safety
 
