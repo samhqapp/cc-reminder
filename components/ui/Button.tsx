@@ -3,6 +3,7 @@ import { PressableScale } from "./PressableScale";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
 import { hairline, radius, type as typeTokens } from "@/constants/Tokens";
+import { lightTap } from "@/utils/haptics";
 
 export type ButtonVariant = "primary" | "secondary" | "success" | "danger";
 
@@ -46,7 +47,10 @@ export function Button({
 
 	return (
 		<PressableScale
-			onPress={onPress}
+			onPress={() => {
+				lightTap();
+				onPress();
+			}}
 			disabled={disabled}
 			contentStyle={[
 				styles.button,

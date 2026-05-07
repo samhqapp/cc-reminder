@@ -4,6 +4,7 @@ import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
 import { hairline } from "@/constants/Tokens";
 import { PressableScale } from "@/components/ui/PressableScale";
+import { mediumTap } from "@/utils/haptics";
 
 type Props = {
 	onPress: () => void;
@@ -15,7 +16,10 @@ export function FloatingAddButton({ onPress }: Props) {
 
 	return (
 		<PressableScale
-			onPress={onPress}
+			onPress={() => {
+				mediumTap();
+				onPress();
+			}}
 			contentStyle={[
 				styles.button,
 				{

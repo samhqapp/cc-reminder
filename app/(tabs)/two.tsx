@@ -17,6 +17,7 @@ import { hairline, radius, spacing, type as typeTokens } from "@/constants/Token
 import { mapCardToDraft, useCards } from "@/hooks/useCards";
 import type { Card, DerivedReminder, SubscriptionIntent } from "@/types/domain";
 import { formatFullDate } from "@/utils/date";
+import { successTap, warningTap } from "@/utils/haptics";
 import { deriveReminders } from "@/utils/reminders";
 
 export default function RemindersScreen() {
@@ -86,15 +87,18 @@ export default function RemindersScreen() {
 								width={tileWidth}
 								palette={palette}
 								onOpenNote={() => setSelectedCard(card ?? null)}
-								onAcknowledge={() =>
-									void acknowledgeReminder(reminder.cardId, reminder.id)
-								}
-								onSnooze={() =>
-									void snoozeReminder(reminder.cardId, reminder.id, 12)
-								}
-								onSettle={() =>
-									void settleCycle(reminder.cardId, reminder.cycleId)
-								}
+								onAcknowledge={() => {
+									successTap();
+									void acknowledgeReminder(reminder.cardId, reminder.id);
+								}}
+								onSnooze={() => {
+									warningTap();
+									void snoozeReminder(reminder.cardId, reminder.id, 12);
+								}}
+								onSettle={() => {
+									successTap();
+									void settleCycle(reminder.cardId, reminder.cycleId);
+								}}
 								onFlipIntent={(intent) =>
 									card ? void handleFlipIntent(card, intent) : undefined
 								}
