@@ -13,7 +13,7 @@ This repo uses the Expo managed release path for Android. The generated `android
 | Android versionCode | `2` |
 | Play track | Internal testing |
 | Release status | Draft |
-| Pricing | Free |
+| Pricing | Paid, USD 5.00 |
 | Category | Finance |
 | Ads | No |
 | Target audience | Adults and general audience. Not directed at children. |

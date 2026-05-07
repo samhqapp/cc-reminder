@@ -8,7 +8,7 @@
 | Short description | Local-first credit card due-date reminders. |
 | Full description | See `fastlane/metadata/android/en-US/full_description.txt`. |
 | Category | Finance |
-| Pricing | Free |
+| Pricing | Paid, USD 5.00 |
 | Ads | No |
 | Target audience | Adults and general audience |
 | Directed at children | No |
