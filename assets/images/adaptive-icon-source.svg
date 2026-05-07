@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">CC Reminder adaptive icon foreground</title>
+  <desc id="desc">A credit card reminder foreground mark with a calendar check mark.</desc>
+  <defs>
+    <linearGradient id="card" x1="196" y1="276" x2="836" y2="748" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2dd4bf"/>
+      <stop offset="0.48" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#84cc16"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="34" stdDeviation="34" flood-color="#020617" flood-opacity="0.42"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <rect x="152" y="304" width="720" height="438" rx="74" fill="url(#card)"/>
+    <rect x="152" y="378" width="720" height="90" fill="#0f172a" opacity="0.28"/>
+    <rect x="246" y="574" width="214" height="32" rx="16" fill="#f8fafc" opacity="0.9"/>
+    <rect x="246" y="644" width="138" height="32" rx="16" fill="#f8fafc" opacity="0.72"/>
+    <circle cx="714" cy="642" r="48" fill="#f8fafc" opacity="0.9"/>
+    <circle cx="774" cy="642" r="48" fill="#f8fafc" opacity="0.58"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="526" y="178" width="292" height="292" rx="58" fill="#f8fafc"/>
+    <rect x="526" y="248" width="292" height="60" fill="#2563eb"/>
+    <rect x="584" y="140" width="34" height="88" rx="17" fill="#94a3b8"/>
+    <rect x="726" y="140" width="34" height="88" rx="17" fill="#94a3b8"/>
+    <path d="M606 364.5 660.5 419 744 332" fill="none" stroke="#16a34a" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g opacity="0.96">
+    <path d="M302 280c0-35.3 28.7-64 64-64h102c35.3 0 64 28.7 64 64v24H302v-24Z" fill="#f8fafc"/>
+    <text x="417" y="287" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="92" font-weight="800" letter-spacing="0" fill="#0f172a">CC</text>
+  </g>
+</svg>

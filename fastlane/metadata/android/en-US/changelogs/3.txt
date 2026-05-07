@@ -1,0 +1,4 @@
+Version 1.0.2 internal testing update:
+
+Add a branded CC Reminder launcher icon, adaptive icon, splash icon, and favicon.
+Keep the Play internal testing release path on Android App Bundle version code 3.

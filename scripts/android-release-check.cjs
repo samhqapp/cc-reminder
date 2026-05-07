@@ -1,9 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 
-const EXPECTED_VERSION = "1.0.1";
+const EXPECTED_VERSION = "1.0.2";
 const EXPECTED_PACKAGE = "com.surajmandal.ccreminder";
-const EXPECTED_VERSION_CODE = 2;
+const EXPECTED_VERSION_CODE = 3;
 
 const requiredFiles = [
 	"docs/android-play-release.md",
@@ -15,7 +15,7 @@ const requiredFiles = [
 	"fastlane/metadata/android/en-US/full_description.txt",
 	"fastlane/metadata/android/en-US/short_description.txt",
 	"fastlane/metadata/android/en-US/title.txt",
-	"fastlane/metadata/android/en-US/changelogs/2.txt",
+	"fastlane/metadata/android/en-US/changelogs/3.txt",
 	"store-assets/android/en-US/feature-graphic/.gitkeep",
 	"store-assets/android/en-US/phone-screenshots/.gitkeep",
 	"store-assets/android/en-US/tablet-screenshots/.gitkeep",
@@ -64,7 +64,7 @@ function loadReleaseState(repoRoot) {
 		).trim(),
 		releaseNotes: readText(
 			repoRoot,
-			"fastlane/metadata/android/en-US/changelogs/2.txt",
+			"fastlane/metadata/android/en-US/changelogs/3.txt",
 		).trim(),
 	};
 }
@@ -161,7 +161,7 @@ function validateReleaseState(state) {
 
 	if (
 		!includesAll(state.releaseNotes, [
-			"Version 1.0.1",
+			"Version 1.0.2",
 			"internal testing",
 			"Android App Bundle",
 		])
