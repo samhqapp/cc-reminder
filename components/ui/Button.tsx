@@ -1,8 +1,13 @@
-import { StyleSheet, Text, type ViewStyle, type StyleProp } from "react-native";
+import { StyleSheet, Text, type StyleProp, type ViewStyle } from "react-native";
 import { PressableScale } from "./PressableScale";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { hairline, radius, type as typeTokens } from "@/constants/Tokens";
+import {
+	hairline,
+	radius,
+	shadow,
+	type as typeTokens,
+} from "@/constants/Tokens";
 import { lightTap } from "@/utils/haptics";
 
 export type ButtonVariant = "primary" | "secondary" | "success" | "danger";
@@ -32,7 +37,7 @@ export function Button({
 	let textColor: string = palette.onPrimary;
 
 	if (variant === "secondary") {
-		backgroundColor = "transparent";
+		backgroundColor = "rgba(255, 255, 255, 0.38)";
 		borderColor = palette.border;
 		textColor = palette.text;
 	} else if (variant === "success") {
@@ -55,6 +60,7 @@ export function Button({
 			contentStyle={[
 				styles.button,
 				compact && styles.compact,
+				variant === "primary" && styles.primaryShadow,
 				{
 					backgroundColor,
 					borderColor,
@@ -72,14 +78,19 @@ const styles = StyleSheet.create({
 	button: {
 		borderWidth: hairline,
 		borderRadius: radius.lg,
+		minHeight: 48,
 		paddingHorizontal: 24,
 		paddingVertical: 14,
 		alignItems: "center",
 		justifyContent: "center",
 		flexDirection: "row",
 	},
+	primaryShadow: {
+		...shadow.soft,
+	},
 	compact: {
-		paddingHorizontal: 16,
+		minHeight: 42,
+		paddingHorizontal: 20,
 		paddingVertical: 10,
 	},
 	label: {

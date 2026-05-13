@@ -1,8 +1,7 @@
-import { StyleSheet, Text } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { StyleSheet } from "react-native";
 
-import { useColorScheme } from "@/components/useColorScheme";
-import Colors from "@/constants/Colors";
-import { hairline } from "@/constants/Tokens";
+import { hairline, shadow, stylepass } from "@/constants/Tokens";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { mediumTap } from "@/utils/haptics";
 
@@ -11,11 +10,10 @@ type Props = {
 };
 
 export function FloatingAddButton({ onPress }: Props) {
-	const colorScheme = useColorScheme() ?? "light";
-	const palette = Colors[colorScheme];
-
 	return (
 		<PressableScale
+			accessibilityRole="button"
+			accessibilityLabel="Add renewal"
 			onPress={() => {
 				mediumTap();
 				onPress();
@@ -23,28 +21,24 @@ export function FloatingAddButton({ onPress }: Props) {
 			contentStyle={[
 				styles.button,
 				{
-					backgroundColor: palette.primary,
-					borderColor: palette.primary,
+					backgroundColor: "rgba(92, 76, 115, 0.9)",
+					borderColor: "rgba(255, 247, 233, 0.18)",
 				},
 			]}
 		>
-			<Text style={[styles.label, { color: palette.onPrimary }]}>+</Text>
+			<Ionicons name="add" size={30} color={stylepass.cream} />
 		</PressableScale>
 	);
 }
 
 const styles = StyleSheet.create({
 	button: {
-		width: 56,
-		height: 56,
-		borderRadius: 28,
+		...shadow.floating,
+		width: 58,
+		height: 58,
+		borderRadius: 29,
 		borderWidth: hairline,
 		alignItems: "center",
 		justifyContent: "center",
-	},
-	label: {
-		fontSize: 28,
-		lineHeight: 30,
-		fontWeight: "400",
 	},
 });

@@ -1,4 +1,11 @@
-import FontAwesome from "@expo/vector-icons/FontAwesome";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import {
+	Jost_400Regular,
+	Jost_500Medium,
+	Jost_600SemiBold,
+	Jost_700Bold,
+	Jost_800ExtraBold,
+} from "@expo-google-fonts/jost";
 import { useFonts } from "expo-font";
 import {
 	DarkTheme,
@@ -9,11 +16,12 @@ import * as Notifications from "expo-notifications";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
+import { font } from "@/constants/Tokens";
 import { CardsProvider } from "@/hooks/useCards";
 import { OnboardingProvider, useOnboarding } from "@/hooks/useOnboarding";
 
@@ -38,7 +46,12 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
 	const [loaded, error] = useFonts({
-		...FontAwesome.font,
+		...Ionicons.font,
+		Jost_400Regular,
+		Jost_500Medium,
+		Jost_600SemiBold,
+		Jost_700Bold,
+		Jost_800ExtraBold,
 	});
 
 	return (
@@ -82,6 +95,15 @@ function RootLayoutNav() {
 	const router = useRouter();
 	const segments = useSegments();
 	const { hasCompletedOnboarding, isReady } = useOnboarding();
+	const platformHeaderOptions =
+		Platform.OS === "android"
+			? {}
+			: {
+					headerTitleStyle: {
+						fontFamily: font.semibold,
+						fontSize: 16,
+					},
+				};
 
 	useEffect(() => {
 		if (!isReady) {
@@ -126,10 +148,7 @@ function RootLayoutNav() {
 							},
 							headerTintColor: palette.text,
 							headerShadowVisible: false,
-							headerTitleStyle: {
-								fontWeight: "500",
-								fontSize: 16,
-							},
+							...platformHeaderOptions,
 							animation: "slide_from_right",
 							animationDuration: 200,
 						}}

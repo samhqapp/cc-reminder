@@ -12,9 +12,10 @@ const { syncReminderNotifications: mockSyncReminderNotifications } = jest.requir
 
 describe("useCards", () => {
 	it("validates required draft fields", () => {
-		expect(validateCardDraft(makeDraft({ name: "" }))).toBe("Card name is required.");
-		expect(validateCardDraft(makeDraft({ provider: "" }))).toBe("Provider is required.");
-		expect(validateCardDraft(makeDraft({ last4: "12" }))).toBe("Last 4 digits must be exactly four numbers.");
+		expect(validateCardDraft(makeDraft({ name: "", provider: "" }))).toBe("Add a label or company.");
+		expect(validateCardDraft(makeDraft({ provider: "" }))).toBeNull();
+		expect(validateCardDraft(makeDraft({ last4: "" }))).toBeNull();
+		expect(validateCardDraft(makeDraft({ last4: "12" }))).toBe("Last 4 must be four numbers or left blank.");
 		expect(validateCardDraft(makeDraft({ dueDay: "" }))).toBe("Due day is required.");
 		expect(
 			validateCardDraft(

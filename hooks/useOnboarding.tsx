@@ -4,16 +4,13 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 import { storageKeys } from "@/utils/storage";
 
-// ─── Dev flag ────────────────────────────────────────────────────────────────
-// Set to true during development to always show onboarding on reload.
-// Flip to false (or remove) before shipping.
-const DEV_FORCE_ONBOARDING = false;
-// ─────────────────────────────────────────────────────────────────────────────
+const ALWAYS_SHOW_ONBOARDING = true;
 
 type OnboardingContextValue = {
 	hasCompletedOnboarding: boolean;
 	isReady: boolean;
 	completeOnboarding: () => Promise<void>;
+	resetOnboarding: () => Promise<void>;
 };
 
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
@@ -26,8 +23,7 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
 		let isMounted = true;
 
 		async function hydrate() {
-			if (DEV_FORCE_ONBOARDING) {
-				// Always show onboarding in dev, but don't clear real storage
+			if (ALWAYS_SHOW_ONBOARDING) {
 				if (isMounted) {
 					setHasCompletedOnboarding(false);
 					setIsReady(true);
@@ -57,9 +53,19 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
 		setHasCompletedOnboarding(true);
 	}
 
+	async function resetOnboarding() {
+		await AsyncStorage.removeItem(storageKeys.onboardingComplete);
+		setHasCompletedOnboarding(false);
+	}
+
 	return (
 		<OnboardingContext.Provider
-			value={{ hasCompletedOnboarding, isReady, completeOnboarding }}
+			value={{
+				hasCompletedOnboarding,
+				isReady,
+				completeOnboarding,
+				resetOnboarding,
+			}}
 		>
 			{children}
 		</OnboardingContext.Provider>

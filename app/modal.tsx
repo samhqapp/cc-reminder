@@ -3,7 +3,14 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
+import {
+	hairline,
+	radius,
+	shadow,
+	spacing,
+	stylepass,
+	type as typeTokens,
+} from "@/constants/Tokens";
 
 const sections = [
 	{
@@ -38,7 +45,7 @@ export default function ModalScreen() {
 				<View
 					style={[
 						styles.hero,
-						{ backgroundColor: palette.surface, borderColor: palette.border },
+						{ backgroundColor: stylepass.panel, borderColor: palette.border },
 					]}
 				>
 					<Text style={[styles.kicker, { color: palette.link }]}>
@@ -79,10 +86,12 @@ const styles = StyleSheet.create({
 	content: {
 		padding: spacing.lg,
 		gap: spacing.md,
+		paddingBottom: 80,
 	},
 	hero: {
+		...shadow.panel,
 		borderWidth: hairline,
-		borderRadius: radius.lg,
+		borderRadius: radius.xl,
 		padding: spacing.lg,
 		gap: spacing.sm,
 	},
@@ -98,8 +107,11 @@ const styles = StyleSheet.create({
 		...typeTokens.body,
 	},
 	section: {
-		borderBottomWidth: hairline,
-		paddingVertical: spacing.md,
+		...shadow.soft,
+		borderWidth: hairline,
+		borderRadius: radius.lg,
+		backgroundColor: "rgba(255, 255, 255, 0.42)",
+		padding: spacing.md,
 		gap: spacing.xxs,
 	},
 	sectionTitle: {

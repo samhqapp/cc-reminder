@@ -1,471 +1,527 @@
 import { router } from "expo-router";
-import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import {
+	Image,
+	type ImageSourcePropType,
+	PanResponder,
+	StyleSheet,
+	Text,
+	useWindowDimensions,
+	View,
+} from "react-native";
+import Animated, {
+	cancelAnimation,
+	Easing,
+	Extrapolation,
+	interpolate,
+	runOnJS,
+	useAnimatedStyle,
+	useSharedValue,
+	withSpring,
+	withTiming,
+} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useColorScheme } from "@/components/useColorScheme";
 import { PressableScale } from "@/components/ui/PressableScale";
-import Colors, { type AppPalette } from "@/constants/Colors";
-import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
+import { font, radius, spacing, type as typeTokens } from "@/constants/Tokens";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { requestNotificationPermission } from "@/utils/notifications";
 
+const SLIDE_ANIMATION_MS = 360;
+const SLIDE_EASING = Easing.bezier(0.22, 1, 0.36, 1);
+const ACTION_BUTTON_SIZE = 64;
+const SIDE_DRIFT_ENTER_DISTANCE = 76;
+const SIDE_DRIFT_EXIT_DISTANCE = 62;
+const DRAG_INPUT_RANGE = [-160, 0, 160];
+const DRAG_OUTPUT_RANGE = [-34, 0, 34];
+
 type Step = {
+	id: string;
 	kicker: string;
 	title: string;
 	body: string;
-	surface: (palette: AppPalette) => string;
-	mockUI: (palette: AppPalette) => React.ReactNode;
+	image: ImageSourcePropType;
+	surface: string;
+	actionColor: string;
+	actionIcon: string;
+	art: {
+		heightRatio: number;
+		maxHeight: number;
+		minHeight: number;
+		bottomRatio: number;
+		maxBottom: number;
+		widthRatio: number;
+		leftRatio: number;
+	};
 };
-
-function MockCard({
-	name,
-	provider,
-	last4,
-	dueLabel,
-	palette,
-}: {
-	name: string;
-	provider: string;
-	last4: string;
-	dueLabel: string;
-	palette: AppPalette;
-}) {
-	return (
-		<View
-			style={[
-				mockStyles.card,
-				{ backgroundColor: palette.card, borderColor: palette.border },
-			]}
-		>
-			<View style={mockStyles.cardRow}>
-				<View style={{ flex: 1 }}>
-					<Text style={[mockStyles.cardName, { color: palette.text }]}>
-						{name}
-					</Text>
-					<Text style={[mockStyles.cardMeta, { color: palette.muted }]}>
-						{provider} · •••• {last4}
-					</Text>
-				</View>
-				<Text style={[mockStyles.dueBadge, { color: palette.body }]}>
-					{dueLabel}
-				</Text>
-			</View>
-		</View>
-	);
-}
-
-function MockReminder({
-	name,
-	label,
-	tone,
-	palette,
-}: {
-	name: string;
-	label: string;
-	tone: "danger" | "warning" | "success";
-	palette: AppPalette;
-}) {
-	const tc =
-		tone === "danger"
-			? palette.danger
-			: tone === "warning"
-				? palette.warning
-				: palette.success;
-	return (
-		<View
-			style={[
-				mockStyles.reminder,
-				{ backgroundColor: palette.card, borderColor: palette.border },
-			]}
-		>
-			<Text style={[mockStyles.reminderBadge, { color: tc }]}>
-				{tone === "danger"
-					? "OVERDUE"
-					: tone === "warning"
-						? "DUE SOON"
-						: "UPCOMING"}
-			</Text>
-			<Text style={[mockStyles.reminderName, { color: palette.text }]}>
-				{name}
-			</Text>
-			<Text style={[mockStyles.reminderSub, { color: palette.muted }]}>
-				{label}
-			</Text>
-		</View>
-	);
-}
-
-function MockNote({
-	text,
-	from,
-	palette,
-}: {
-	text: string;
-	from?: string;
-	palette: AppPalette;
-}) {
-	return (
-		<View
-			style={[
-				mockStyles.note,
-				{ backgroundColor: palette.card, borderColor: palette.border },
-			]}
-		>
-			{from ? (
-				<Text style={[mockStyles.noteFrom, { color: palette.link }]}>
-					{from}
-				</Text>
-			) : null}
-			<Text
-				style={[mockStyles.noteText, { color: palette.body }]}
-				numberOfLines={3}
-			>
-				{text}
-			</Text>
-		</View>
-	);
-}
 
 const STEPS: Step[] = [
 	{
-		kicker: "Your cards",
-		title: "Track every\nrenewal date",
-		body: "Add a card once. The app calculates the next billing date automatically and reminds you before it hits.",
-		surface: (p) => p.cream,
-		mockUI: (palette) => (
-			<View style={{ gap: 8 }}>
-				<MockCard
-					name="Family plan"
-					provider="Netflix"
-					last4="4242"
-					dueLabel="3 days"
-					palette={palette}
-				/>
-				<MockCard
-					name="Premium"
-					provider="Spotify"
-					last4="1337"
-					dueLabel="12 days"
-					palette={palette}
-				/>
-				<MockCard
-					name="iCloud 200GB"
-					provider="Apple"
-					last4="8888"
-					dueLabel="Tomorrow"
-					palette={palette}
-				/>
-			</View>
-		),
+		id: "billing-dates",
+		kicker: "Billing dates",
+		title: "Credit Card Dates Made Easy",
+		body: "Add each subscription's billing day once, then check the next renewal date whenever you need it.",
+		image: require("../assets/images/onboarding/track-renewals.png"),
+		surface: "#d2bef0",
+		actionColor: "rgba(70, 58, 92, 0.86)",
+		actionIcon: "#f8efff",
+		art: {
+			heightRatio: 0.54,
+			maxHeight: 560,
+			minHeight: 400,
+			bottomRatio: 0.18,
+			maxBottom: 170,
+			widthRatio: 1.04,
+			leftRatio: -0.02,
+		},
 	},
 	{
-		kicker: "Reminders",
-		title: "Decide before\nyou're charged",
-		body: "See what's due, flip a card to Cancel or Keep, and mark it as handled. Snooze if you need more time.",
-		surface: (p) => p.dangerSoft,
-		mockUI: (palette) => (
-			<View style={{ gap: 8 }}>
-				<MockReminder
-					name="Netflix, Family plan"
-					label="May 1 · •••• 4242"
-					tone="danger"
-					palette={palette}
-				/>
-				<MockReminder
-					name="Spotify, Premium"
-					label="May 10 · •••• 1337"
-					tone="warning"
-					palette={palette}
-				/>
-			</View>
-		),
+		id: "reminder-timing",
+		kicker: "Reminder timing",
+		title: "Get Nudged Around Renewal Day",
+		body: "Set simple reminders so the billing date stays visible before the next cycle comes around.",
+		image: require("../assets/images/onboarding/renewal-reminders.png"),
+		surface: "#f3b9a7",
+		actionColor: "rgba(42, 76, 66, 0.86)",
+		actionIcon: "#fff4ef",
+		art: {
+			heightRatio: 0.68,
+			maxHeight: 700,
+			minHeight: 480,
+			bottomRatio: 0.24,
+			maxBottom: 220,
+			widthRatio: 1.32,
+			leftRatio: -0.16,
+		},
 	},
 	{
-		kicker: "Notes",
-		title: "Capture the\ndetails that matter",
-		body: "Add quick notes or link them to a card: cancellation links, phone numbers, anything you'd need in the moment.",
-		surface: (p) => p.successSoft,
-		mockUI: (palette) => (
-			<View style={{ gap: 8 }}>
-				<MockNote
-					from="Netflix"
-					text="Cancel via netflix.com/cancel. Do NOT call support, takes 30 min."
-					palette={palette}
-				/>
-				<MockNote
-					text="Cancel Gym before 25th. They charge full month even mid-cycle."
-					palette={palette}
-				/>
-			</View>
-		),
+		id: "renewal-notes",
+		kicker: "Renewal notes",
+		title: "Keep Renewal Notes Close",
+		body: "Save cancellation links, support numbers, and plan details locally with the card.",
+		image: require("../assets/images/onboarding/private-notes.png"),
+		surface: "#d2bf78",
+		actionColor: "rgba(50, 81, 64, 0.86)",
+		actionIcon: "#fff9df",
+		art: {
+			heightRatio: 0.68,
+			maxHeight: 700,
+			minHeight: 480,
+			bottomRatio: 0.24,
+			maxBottom: 220,
+			widthRatio: 1.32,
+			leftRatio: -0.16,
+		},
 	},
 ];
 
 export default function OnboardingScreen() {
-	const colorScheme = useColorScheme() ?? "light";
-	const palette = Colors[colorScheme];
 	const { completeOnboarding } = useOnboarding();
+	const { height, width } = useWindowDimensions();
 	const [step, setStep] = useState(0);
+	const [direction, setDirection] = useState(1);
+	const [previousStep, setPreviousStep] = useState<number | null>(null);
 	const [isContinuing, setIsContinuing] = useState(false);
+	const transitionInFlight = useRef(false);
+	const slideProgress = useSharedValue(1);
+	const dragX = useSharedValue(0);
 
 	const isLast = step === STEPS.length - 1;
 	const current = STEPS[step];
+	const horizontalPadding = width < 380 ? spacing.md : spacing.lg;
 
-	function goNext() {
-		if (isLast) {
-			void handleFinish();
-		} else {
-			setStep((s) => s + 1);
-		}
-	}
+	const clearTransition = useCallback(() => {
+		transitionInFlight.current = false;
+		setPreviousStep(null);
+	}, []);
 
-	function goPrev() {
-		if (step > 0) {
-			setStep((s) => s - 1);
-		}
-	}
+	const resetDrag = useCallback(() => {
+		dragX.value = withSpring(0, {
+			damping: 18,
+			mass: 0.7,
+			stiffness: 220,
+		});
+	}, [dragX]);
 
-	async function handleFinish() {
+	const finishOnboarding = useCallback(async ({
+		requestPermission,
+	}: {
+		requestPermission: boolean;
+	}) => {
 		if (isContinuing) return;
+
 		setIsContinuing(true);
-		await requestNotificationPermission();
-		await completeOnboarding();
-		router.replace("/(tabs)");
-	}
+
+		try {
+			if (requestPermission) {
+				await requestNotificationPermission();
+			}
+			await completeOnboarding();
+			router.replace("/(tabs)");
+		} finally {
+			setIsContinuing(false);
+		}
+	}, [completeOnboarding, isContinuing]);
+
+	const startStepTransition = useCallback(
+		(nextStep: number, nextDirection: 1 | -1) => {
+			if (transitionInFlight.current || previousStep !== null || nextStep === step) {
+				return;
+			}
+
+			transitionInFlight.current = true;
+			cancelAnimation(slideProgress);
+			cancelAnimation(dragX);
+			dragX.value = 0;
+			slideProgress.value = 0;
+			setPreviousStep(step);
+			setDirection(nextDirection);
+			setStep(nextStep);
+
+			slideProgress.value = withTiming(
+				1,
+				{
+					duration: SLIDE_ANIMATION_MS,
+					easing: SLIDE_EASING,
+				},
+				(finished) => {
+					if (finished) {
+						runOnJS(clearTransition)();
+					}
+				},
+			);
+		},
+		[clearTransition, dragX, previousStep, slideProgress, step],
+	);
+
+	const goNext = useCallback(() => {
+		if (transitionInFlight.current || previousStep !== null) return;
+
+		if (isLast) {
+			void finishOnboarding({ requestPermission: true });
+		} else {
+			startStepTransition(step + 1, 1);
+		}
+	}, [finishOnboarding, isLast, previousStep, startStepTransition, step]);
+
+	const goPrev = useCallback(() => {
+		if (transitionInFlight.current || previousStep !== null) return;
+
+		if (step > 0) {
+			startStepTransition(step - 1, -1);
+		}
+	}, [previousStep, startStepTransition, step]);
+
+	const panResponder = useMemo(
+		() =>
+			PanResponder.create({
+				onMoveShouldSetPanResponder: (_, gesture) =>
+					Math.abs(gesture.dx) > 18 &&
+					Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.4,
+				onPanResponderMove: (_, gesture) => {
+					dragX.value = gesture.dx;
+				},
+				onPanResponderRelease: (_, gesture) => {
+					const shouldGoBack = gesture.dx > 54;
+					const shouldGoForward = gesture.dx < -54;
+
+					resetDrag();
+
+					if (shouldGoBack) {
+						goPrev();
+					}
+
+					if (shouldGoForward) {
+						goNext();
+					}
+				},
+				onPanResponderTerminate: resetDrag,
+			}),
+		[dragX, goNext, goPrev, resetDrag],
+	);
+
+	const incomingSlideStyle = useAnimatedStyle(() => {
+		const dragTranslate = interpolate(
+			dragX.value,
+			DRAG_INPUT_RANGE,
+			DRAG_OUTPUT_RANGE,
+			Extrapolation.CLAMP,
+		);
+		const incomingTranslate = interpolate(
+			slideProgress.value,
+			[0, 1],
+			[direction * SIDE_DRIFT_ENTER_DISTANCE, 0],
+			Extrapolation.CLAMP,
+		);
+
+		return {
+			opacity: previousStep === null ? 1 : slideProgress.value,
+			transform: [{ translateX: incomingTranslate + dragTranslate }],
+		};
+	}, [direction, previousStep]);
+
+	const outgoingSlideStyle = useAnimatedStyle(() => {
+		const outgoingTranslate = interpolate(
+			slideProgress.value,
+			[0, 1],
+			[0, -direction * SIDE_DRIFT_EXIT_DISTANCE],
+			Extrapolation.CLAMP,
+		);
+
+		return {
+			opacity: 1 - slideProgress.value,
+			transform: [{ translateX: outgoingTranslate }],
+		};
+	}, [direction]);
 
 	return (
 		<SafeAreaView
-			style={[styles.safeArea, { backgroundColor: palette.background }]}
+			style={[styles.safeArea, { backgroundColor: current.surface }]}
+			{...panResponder.panHandlers}
 		>
-			{/* Progress dots */}
-			<View style={styles.dotsRow}>
-				{STEPS.map((_, i) => (
-					<View
-						key={i}
-						style={[
-							styles.dot,
-							{
-								backgroundColor:
-									i === step ? palette.primary : palette.border,
-								width: i === step ? 20 : 6,
-							},
-						]}
-					/>
-				))}
-			</View>
-
-			<ScrollView
-				contentContainerStyle={styles.scroll}
-				showsVerticalScrollIndicator={false}
+			<View
+				style={styles.contentFrame}
 			>
-				<View style={styles.header}>
-					<Text style={[styles.kicker, { color: palette.link }]}>
-						{current.kicker}
-					</Text>
-					<Text style={[styles.title, { color: palette.text }]}>
-						{current.title}
-					</Text>
-					<Text style={[styles.body, { color: palette.body }]}>
-						{current.body}
-					</Text>
-				</View>
+				{previousStep !== null ? (
+					<Animated.View
+						pointerEvents="none"
+						renderToHardwareTextureAndroid
+						shouldRasterizeIOS
+						style={[
+							styles.slidePane,
+							{ paddingHorizontal: horizontalPadding },
+							outgoingSlideStyle,
+						]}
+					>
+						<SlideContent
+							item={STEPS[previousStep]}
+							activeStep={previousStep}
+							viewportHeight={height}
+							viewportWidth={width}
+						/>
+					</Animated.View>
+				) : null}
 
-				<View
+				<Animated.View
+					renderToHardwareTextureAndroid
+					shouldRasterizeIOS
 					style={[
-						styles.preview,
-						{
-							backgroundColor: current.surface(palette),
-							borderColor: palette.border,
-						},
+						styles.slidePane,
+						{ paddingHorizontal: horizontalPadding },
+						incomingSlideStyle,
 					]}
 				>
-					{current.mockUI(palette)}
-				</View>
+					<SlideContent
+						item={current}
+						activeStep={step}
+						viewportHeight={height}
+						viewportWidth={width}
+					/>
+				</Animated.View>
+			</View>
 
-				{isLast ? (
-					<View style={[styles.trustBand, { borderColor: palette.border }]}>
-						<Text style={[styles.trustTitle, { color: palette.text }]}>
-							Your data stays on your device
-						</Text>
-						<Text style={[styles.trustBody, { color: palette.muted }]}>
-							Open source. Fully local. No account required. No logs shipped to
-							any server.
-						</Text>
-					</View>
-				) : null}
-			</ScrollView>
-
-			<View style={[styles.nav, { borderTopColor: palette.border }]}>
-				{step > 0 ? (
-					<PressableScale
-						onPress={goPrev}
-						contentStyle={[styles.backBtn, { borderColor: palette.border }]}
-					>
-						<Text style={[styles.backLabel, { color: palette.muted }]}>
-							Back
-						</Text>
-					</PressableScale>
-				) : (
-					<View style={styles.backPlaceholder} />
-				)}
-
+			<View style={[styles.nextButtonWrap, { right: horizontalPadding }]}>
 				<PressableScale
+					accessibilityLabel={
+						isLast ? "Finish onboarding" : "Continue onboarding"
+					}
 					onPress={goNext}
 					disabled={isContinuing}
 					contentStyle={[
-						styles.nextBtn,
-						{ backgroundColor: palette.primary },
+						styles.nextButton,
+						{
+							backgroundColor: current.actionColor,
+						},
 					]}
 				>
-					<Text style={[styles.nextLabel, { color: palette.onPrimary }]}>
-						{isLast
-							? isContinuing
-								? "Starting..."
-								: "Get Started"
-							: "Continue"}
-					</Text>
+					<ChevronRightIcon color={current.actionIcon} />
 				</PressableScale>
 			</View>
 		</SafeAreaView>
 	);
 }
 
+function SlideContent({
+	item,
+	activeStep,
+	viewportHeight,
+	viewportWidth,
+}: {
+	item: Step;
+	activeStep: number;
+	viewportHeight: number;
+	viewportWidth: number;
+}) {
+	const illustrationHeight = Math.max(
+		item.art.minHeight,
+		Math.min(viewportHeight * item.art.heightRatio, item.art.maxHeight),
+	);
+	const illustrationBottom = -Math.min(
+		viewportHeight * item.art.bottomRatio,
+		item.art.maxBottom,
+	);
+	const illustrationWidth = viewportWidth * item.art.widthRatio;
+	const illustrationLeft = viewportWidth * item.art.leftRatio;
+
+	return (
+		<>
+			<View style={styles.slideCopy}>
+				<View style={styles.kickerBlock}>
+					<Text style={styles.kicker}>{item.kicker}</Text>
+					<View style={styles.dotsRow}>
+						{STEPS.map((stepItem, i) => (
+							<View
+								key={stepItem.id}
+								style={[
+									styles.dot,
+									{
+										backgroundColor:
+											i === activeStep
+												? "#ffffff"
+												: "rgba(24, 29, 38, 0.24)",
+										width: i === activeStep ? 24 : 8,
+									},
+								]}
+							/>
+						))}
+					</View>
+				</View>
+				<Text style={styles.title}>{item.title}</Text>
+				<Text style={styles.body}>{item.body}</Text>
+			</View>
+
+			<Image
+				fadeDuration={0}
+				source={item.image}
+				style={[
+					styles.illustration,
+					{
+						height: illustrationHeight,
+						bottom: illustrationBottom,
+						left: illustrationLeft,
+						width: illustrationWidth,
+					},
+				]}
+				resizeMode="contain"
+			/>
+		</>
+	);
+}
+
+function ChevronRightIcon({ color }: { color: string }) {
+	return (
+		<View style={styles.chevronBox} pointerEvents="none">
+			<View
+				style={[
+					styles.chevronStroke,
+					styles.chevronStrokeTop,
+					{ backgroundColor: color },
+				]}
+			/>
+			<View
+				style={[
+					styles.chevronStroke,
+					styles.chevronStrokeBottom,
+					{ backgroundColor: color },
+				]}
+			/>
+		</View>
+	);
+}
+
 const styles = StyleSheet.create({
 	safeArea: {
 		flex: 1,
+		overflow: "hidden",
+	},
+	contentFrame: {
+		flex: 1,
+		position: "relative",
+		paddingBottom: 0,
+		overflow: "visible",
+	},
+	slidePane: {
+		...StyleSheet.absoluteFillObject,
+		overflow: "visible",
+		paddingTop: spacing.xl,
 	},
 	dotsRow: {
 		flexDirection: "row",
-		justifyContent: "center",
 		alignItems: "center",
-		gap: 6,
-		paddingTop: spacing.lg,
-		paddingBottom: spacing.sm,
+		gap: spacing.xs,
 	},
 	dot: {
-		height: 6,
-		borderRadius: 3,
+		height: 8,
+		borderRadius: radius.pill,
 	},
-	scroll: {
-		padding: spacing.lg,
-		paddingBottom: spacing.xl,
-		gap: spacing.lg,
+	slideCopy: {
+		gap: spacing.md,
+		paddingTop: spacing.lg,
 	},
-	header: {
+	kickerBlock: {
 		gap: spacing.sm,
+	},
+	illustration: {
+		position: "absolute",
+		left: "-16%",
+		width: "132%",
 	},
 	kicker: {
 		...typeTokens.caption,
+		letterSpacing: 0.8,
 		textTransform: "uppercase",
-		letterSpacing: 1.2,
+		color: "rgba(24, 29, 38, 0.68)",
 	},
 	title: {
-		...typeTokens.displayLg,
+		fontFamily: font.bold,
+		fontSize: 48,
+		lineHeight: 54,
+		letterSpacing: 0,
+		color: "#181d26",
+		maxWidth: 342,
 	},
 	body: {
-		...typeTokens.body,
-		maxWidth: 340,
+		fontFamily: font.medium,
+		fontSize: 17,
+		lineHeight: 25,
+		letterSpacing: 0,
+		color: "rgba(24, 29, 38, 0.78)",
+		maxWidth: 430,
 	},
-	preview: {
-		borderWidth: hairline,
-		borderRadius: radius.lg,
-		padding: spacing.md,
+	nextButtonWrap: {
+		position: "absolute",
+		bottom: 68,
+		width: ACTION_BUTTON_SIZE,
+		height: ACTION_BUTTON_SIZE,
 	},
-	trustBand: {
-		borderWidth: hairline,
-		borderRadius: radius.md,
-		padding: spacing.md,
-		gap: spacing.xxs,
-	},
-	trustTitle: {
-		...typeTokens.titleSm,
-	},
-	trustBody: {
-		...typeTokens.body,
-	},
-	nav: {
-		flexDirection: "row",
+	nextButton: {
+		width: ACTION_BUTTON_SIZE,
+		height: ACTION_BUTTON_SIZE,
+		borderRadius: radius.pill,
 		alignItems: "center",
-		justifyContent: "space-between",
-		paddingHorizontal: spacing.lg,
-		paddingVertical: spacing.md,
-		borderTopWidth: hairline,
-		gap: spacing.sm,
+		justifyContent: "center",
+		overflow: "hidden",
 	},
-	backPlaceholder: {
-		width: 72,
-	},
-	backBtn: {
-		borderWidth: hairline,
-		borderRadius: radius.lg,
-		paddingHorizontal: spacing.md,
-		paddingVertical: 12,
+	chevronBox: {
+		width: 28,
+		height: 28,
 		alignItems: "center",
-		width: 72,
+		justifyContent: "center",
+		opacity: 0.76,
+		transform: [{ translateX: -1 }, { translateY: -0.5 }],
 	},
-	backLabel: {
-		...typeTokens.button,
+	chevronStroke: {
+		position: "absolute",
+		left: 7,
+		top: 12.25,
+		width: 18,
+		height: 3.5,
+		borderRadius: radius.pill,
 	},
-	nextBtn: {
-		flex: 1,
-		borderRadius: radius.lg,
-		paddingVertical: 14,
-		alignItems: "center",
+	chevronStrokeTop: {
+		transform: [{ translateY: -5 }, { rotate: "45deg" }],
 	},
-	nextLabel: {
-		...typeTokens.button,
-	},
-});
-
-const mockStyles = StyleSheet.create({
-	card: {
-		borderWidth: hairline,
-		borderRadius: radius.md,
-		padding: spacing.sm,
-	},
-	cardRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: spacing.sm,
-	},
-	cardName: {
-		...typeTokens.labelMd,
-	},
-	cardMeta: {
-		...typeTokens.legal,
-	},
-	dueBadge: {
-		...typeTokens.caption,
-	},
-	reminder: {
-		borderWidth: hairline,
-		borderRadius: radius.md,
-		padding: spacing.sm,
-		gap: 3,
-	},
-	reminderBadge: {
-		...typeTokens.legal,
-		fontWeight: "500",
-		letterSpacing: 0.5,
-	},
-	reminderName: {
-		...typeTokens.labelMd,
-	},
-	reminderSub: {
-		...typeTokens.legal,
-	},
-	note: {
-		borderWidth: hairline,
-		borderRadius: radius.md,
-		padding: spacing.sm,
-		gap: 3,
-	},
-	noteFrom: {
-		...typeTokens.legal,
-		fontWeight: "500",
-	},
-	noteText: {
-		...typeTokens.body,
+	chevronStrokeBottom: {
+		transform: [{ translateY: 5 }, { rotate: "-45deg" }],
 	},
 });

@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react-native";
+import { Image } from "react-native";
 
 import OnboardingScreen from "@/app/onboarding";
 
@@ -16,20 +22,35 @@ jest.mock("@/utils/notifications", () => ({
 }));
 
 describe("OnboardingScreen", () => {
-	it("walks through steps, shows trust copy, and finishes into the app", async () => {
+	it("renders onboarding art without platform image fade transitions", () => {
+		const { UNSAFE_getAllByType } = render(<OnboardingScreen />);
+
+		expect(
+			UNSAFE_getAllByType(Image).every(
+				(image) => image.props.fadeDuration === 0,
+			),
+		).toBe(true);
+	});
+
+	it("walks through the illustrated steps and finishes into the app", async () => {
 		render(<OnboardingScreen />);
 		const { router } = jest.requireMock("expo-router");
 
-		expect(screen.getByText("Your cards")).toBeOnTheScreen();
-		expect(screen.getByText(/Track every/)).toBeOnTheScreen();
+		expect(screen.getByText("Billing dates")).toBeOnTheScreen();
+		expect(screen.getByText("Credit Card Dates Made Easy")).toBeOnTheScreen();
+		expect(screen.queryByText("Step 1")).toBeNull();
 
-		fireEvent.press(screen.getByText("Continue"));
-		expect(screen.getByText("Reminders")).toBeOnTheScreen();
+		fireEvent.press(screen.getByLabelText("Continue onboarding"));
+		expect(screen.getByText("Reminder timing")).toBeOnTheScreen();
+		expect(screen.getByText("Get Nudged Around Renewal Day")).toBeOnTheScreen();
+		await waitFor(() => expect(screen.queryByText("Billing dates")).toBeNull());
 
-		fireEvent.press(screen.getByText("Continue"));
-		expect(screen.getByText("Your data stays on your device")).toBeOnTheScreen();
+		fireEvent.press(screen.getByLabelText("Continue onboarding"));
+		expect(screen.getByText("Renewal notes")).toBeOnTheScreen();
+		expect(screen.getByText("Keep Renewal Notes Close")).toBeOnTheScreen();
+		await waitFor(() => expect(screen.queryByText("Reminder timing")).toBeNull());
 
-		fireEvent.press(screen.getByText("Get Started"));
+		fireEvent.press(screen.getByLabelText("Finish onboarding"));
 
 		await waitFor(() => expect(mockRequestNotificationPermission).toHaveBeenCalled());
 		await waitFor(() => expect(mockCompleteOnboarding).toHaveBeenCalled());

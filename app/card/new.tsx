@@ -10,8 +10,8 @@ export default function NewCardScreen() {
 	return (
 		<CardForm
 			key="new-card-form"
-			title="Create a card"
-			subtitle="Capture only the data that matters for reminders: provider, last 4 digits, tags, dates, alerts, and optional extended tracking."
+			title="Add Billing Date"
+			subtitle="Capture only the reminder data that matters: provider, last 4 digits, tags, billing day, renewal day, and notes."
 			initialDraft={defaultDraft()}
 			submitLabel="Save card"
 			onSubmit={async (draft) => {

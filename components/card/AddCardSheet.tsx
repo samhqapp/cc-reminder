@@ -7,7 +7,13 @@ import { PressableScale } from "@/components/ui/PressableScale";
 import { TextField } from "@/components/ui/TextField";
 import { Button } from "@/components/ui/Button";
 import Colors from "@/constants/Colors";
-import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
+import {
+	hairline,
+	radius,
+	spacing,
+	stylepass,
+	type as typeTokens,
+} from "@/constants/Tokens";
 import {
 	findCompanyPreset,
 	searchCompanyPresets,
@@ -32,12 +38,14 @@ export function AddCardSheet({
 	const [draft, setDraft] = useState<CardDraft>(initialDraft);
 	const [error, setError] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
+	const [showAdvanced, setShowAdvanced] = useState(false);
 
 	useEffect(() => {
 		if (visible) {
 			setDraft(initialDraft);
 			setError(null);
 			setIsSaving(false);
+			setShowAdvanced(false);
 		}
 	}, [initialDraft, visible]);
 
@@ -64,7 +72,7 @@ export function AddCardSheet({
 		<BottomSheet
 			visible={visible}
 			title="Add card"
-			subtitle="Quick setup for subscription reminders."
+			subtitle="Quick setup for renewal dates."
 			onClose={onClose}
 			footer={
 				<View style={styles.footerWrap}>
@@ -87,7 +95,7 @@ export function AddCardSheet({
 				showsVerticalScrollIndicator={false}
 			>
 				<TextField
-					label="Company"
+					label="Company or label"
 					value={draft.provider}
 					onChangeText={(value) =>
 						update({
@@ -96,6 +104,7 @@ export function AddCardSheet({
 						})
 					}
 					placeholder="Netflix"
+					hint="Required unless you add a nickname in Advanced."
 				/>
 				{draft.provider.trim().length > 0 ? (
 					<View style={styles.suggestionRow}>
@@ -125,13 +134,43 @@ export function AddCardSheet({
 					</View>
 				) : null}
 				<TextField
-					label="Card name"
-					value={draft.name}
-					onChangeText={(value) => update({ name: value })}
-					placeholder="Family plan"
+					label="Renewal day"
+					value={draft.dueDay}
+					onChangeText={(value) =>
+						update({
+							dueDay: value.replace(/[^0-9]/g, "").slice(0, 2),
+						})
+					}
+					placeholder="25"
+					keyboardType="number-pad"
+					hint="Required, monthly 1-31."
 				/>
-				<View style={styles.row}>
-					<View style={styles.field}>
+				<PressableScale
+					accessibilityRole="button"
+					onPress={() => setShowAdvanced((current) => !current)}
+					contentStyle={[
+						styles.advancedToggle,
+						{
+							borderColor: palette.border,
+						},
+					]}
+				>
+					<Text style={[styles.advancedTitle, { color: palette.text }]}>
+						{showAdvanced ? "Hide advanced" : "Advanced"}
+					</Text>
+					<Text style={[styles.advancedMeta, { color: palette.muted }]}>
+						{showAdvanced ? "Collapse optional fields" : "Optional details"}
+					</Text>
+				</PressableScale>
+				{showAdvanced ? (
+					<>
+						<TextField
+							label="Card nickname"
+							value={draft.name}
+							onChangeText={(value) => update({ name: value })}
+							placeholder="Family plan"
+							hint="Optional. Uses company or label when blank."
+						/>
 						<TextField
 							label="Last 4"
 							value={draft.last4}
@@ -142,31 +181,18 @@ export function AddCardSheet({
 							}
 							placeholder="4242"
 							keyboardType="number-pad"
+							hint="Optional."
 						/>
-					</View>
-					<View style={styles.field}>
 						<TextField
-							label="Renewal day"
-							value={draft.dueDay}
-							onChangeText={(value) =>
-								update({
-									dueDay: value.replace(/[^0-9]/g, "").slice(0, 2),
-								})
-							}
-							placeholder="25"
-							keyboardType="number-pad"
-							hint="Monthly, 1-31"
+							label="Note"
+							value={draft.note}
+							onChangeText={(value) => update({ note: value })}
+							placeholder="Cancellation link, phone, or reminder note."
+							multiline
+							minHeight={72}
 						/>
-					</View>
-				</View>
-				<TextField
-					label="Note"
-					value={draft.note}
-					onChangeText={(value) => update({ note: value })}
-					placeholder="Cancellation link, phone, or reminder note."
-					multiline
-					minHeight={72}
-				/>
+					</>
+				) : null}
 			</ScrollView>
 		</BottomSheet>
 	);
@@ -183,12 +209,19 @@ const styles = StyleSheet.create({
 	footerWrap: {
 		gap: spacing.sm,
 	},
-	row: {
-		flexDirection: "row",
-		gap: spacing.sm,
+	advancedToggle: {
+		borderWidth: hairline,
+		borderRadius: radius.lg,
+		backgroundColor: "rgba(255, 255, 255, 0.34)",
+		paddingHorizontal: spacing.md,
+		paddingVertical: spacing.sm,
 	},
-	field: {
-		flex: 1,
+	advancedTitle: {
+		...typeTokens.titleSm,
+	},
+	advancedMeta: {
+		...typeTokens.legal,
+		marginTop: 2,
 	},
 	suggestionRow: {
 		flexDirection: "row",
@@ -198,12 +231,14 @@ const styles = StyleSheet.create({
 	},
 	suggestionChip: {
 		borderWidth: hairline,
-		borderRadius: radius.pill,
-		paddingHorizontal: spacing.sm,
+		borderRadius: radius.lg,
+		paddingHorizontal: 14,
 		paddingVertical: 8,
+		backgroundColor: "rgba(255, 255, 255, 0.36)",
 	},
 	suggestionLabel: {
 		...typeTokens.caption,
+		color: stylepass.ink,
 	},
 	error: {
 		...typeTokens.body,

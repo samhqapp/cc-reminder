@@ -49,7 +49,7 @@ export default function CardDetailScreen() {
 			<CardForm
 				key={card.id}
 				title={card.name}
-				subtitle={`${reminders.length} upcoming reminder${reminders.length === 1 ? "" : "s"}. Edit card details below.`}
+				subtitle={`${reminders.length} renewal reminder${reminders.length === 1 ? "" : "s"} in this card's date window.`}
 				initialDraft={mapCardToDraft(card)}
 				submitLabel="Save changes"
 				onSubmit={async (draft) => {

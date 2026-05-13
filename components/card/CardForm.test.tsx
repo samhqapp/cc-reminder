@@ -17,12 +17,14 @@ describe("CardForm", () => {
 			/>,
 		);
 
+		expect(screen.queryByPlaceholderText("Example: Everyday Gold")).toBeNull();
+		fireEvent.changeText(screen.getByPlaceholderText("Example: Netflix"), "Amex");
+		fireEvent.changeText(screen.getByPlaceholderText("25"), "31");
+		fireEvent.press(screen.getByText("Advanced"));
 		fireEvent.changeText(screen.getByPlaceholderText("Example: Everyday Gold"), "Blue Cash");
-		fireEvent.changeText(screen.getByPlaceholderText("American Express"), "Amex");
 		fireEvent.changeText(screen.getByPlaceholderText("0123"), "12a34");
-		fireEvent.changeText(screen.getAllByPlaceholderText("1-31")[0], "33");
-		fireEvent.changeText(screen.getAllByPlaceholderText("1-31")[1], "31");
-		fireEvent.changeText(screen.getByPlaceholderText("travel, backup, monthly"), "travel, backup");
+		fireEvent.changeText(screen.getByPlaceholderText("1-31"), "33");
+		fireEvent.changeText(screen.getByPlaceholderText("travel, backup"), "travel, backup");
 
 		fireEvent.press(screen.getByText("Save card"));
 
@@ -50,6 +52,8 @@ describe("CardForm", () => {
 			/>,
 		);
 
+		expect(screen.queryByText("Extended tracking")).toBeNull();
+		fireEvent.press(screen.getByText("Advanced"));
 		fireEvent.press(screen.getByText("Extended tracking"));
 
 		expect(screen.getByText("Extended tracking acknowledgment")).toBeOnTheScreen();

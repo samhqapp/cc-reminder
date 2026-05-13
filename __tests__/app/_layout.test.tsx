@@ -4,7 +4,7 @@ const mockUseOnboarding = jest.fn();
 const mockUseFonts = jest.fn();
 const mockHideAsync = jest.fn(async () => undefined);
 
-jest.mock("@expo/vector-icons/FontAwesome", () => ({
+jest.mock("@expo/vector-icons/Ionicons", () => ({
 	__esModule: true,
 	default: { font: {} },
 }));

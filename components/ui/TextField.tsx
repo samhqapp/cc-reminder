@@ -3,7 +3,13 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
+import {
+	hairline,
+	radius,
+	spacing,
+	stylepass,
+	type as typeTokens,
+} from "@/constants/Tokens";
 
 type Props = TextInputProps & {
 	label: string;
@@ -48,11 +54,12 @@ const styles = StyleSheet.create({
 	},
 	label: {
 		...typeTokens.caption,
+		color: stylepass.ink,
 	},
 	input: {
 		...typeTokens.body,
 		borderWidth: hairline,
-		borderRadius: radius.sm,
+		borderRadius: radius.md,
 		paddingHorizontal: spacing.md,
 		paddingVertical: 12,
 		fontSize: 15,

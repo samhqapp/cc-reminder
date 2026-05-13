@@ -40,6 +40,10 @@ describe("NotesScreen", () => {
 
 		render(<NotesScreen />);
 
+		expect(screen.getByText("Renewal Notebook")).toBeOnTheScreen();
+		expect(screen.getByText("Keep Details Close")).toBeOnTheScreen();
+		fireEvent.press(screen.getByLabelText("Hide notes info"));
+		expect(screen.queryByText("Keep Details Close")).toBeNull();
 		expect(screen.getByText("Netflix Family")).toBeOnTheScreen();
 		fireEvent.changeText(screen.getByPlaceholderText("Jot something down..."), "Track statement");
 		fireEvent.press(screen.getByText("Save note"));
@@ -63,6 +67,7 @@ describe("NotesScreen", () => {
 		});
 
 		const { rerender } = render(<NotesScreen />);
+		expect(screen.getByText("Renewal Notebook")).toBeOnTheScreen();
 		expect(screen.getByText("Loading...")).toBeOnTheScreen();
 
 		mockUseQuickNotes.mockReturnValue({

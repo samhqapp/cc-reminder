@@ -62,10 +62,10 @@ function normalizeCard(card: Card): Card {
 }
 
 export function validateCardDraft(draft: CardDraft) {
-	if (!draft.name.trim()) return "Card name is required.";
-	if (!draft.provider.trim()) return "Provider is required.";
-	if (!/^\d{4}$/.test(draft.last4.trim()))
-		return "Last 4 digits must be exactly four numbers.";
+	if (!draft.name.trim() && !draft.provider.trim())
+		return "Add a label or company.";
+	if (draft.last4.trim() && !/^\d{4}$/.test(draft.last4.trim()))
+		return "Last 4 must be four numbers or left blank.";
 
 	const dueDay = normalizeDay(draft.dueDay);
 	if (!dueDay) return "Due day is required.";
@@ -86,6 +86,8 @@ function toCard(draft: CardDraft, existing?: Card): Card {
 	const now = new Date().toISOString();
 	const billingDay = normalizeDay(draft.billingDay);
 	const dueDay = normalizeDay(draft.dueDay) ?? 1;
+	const provider = draft.provider.trim();
+	const name = draft.name.trim() || provider || "Renewal reminder";
 	const tags = draft.tags
 		.split(",")
 		.map((tag) => tag.trim())
@@ -98,8 +100,8 @@ function toCard(draft: CardDraft, existing?: Card): Card {
 
 	return {
 		id: existing?.id ?? `${Date.now()}`,
-		name: draft.name.trim(),
-		provider: draft.provider.trim(),
+		name,
+		provider: provider || "Card",
 		companyKey: draft.companyKey,
 		last4: draft.last4.trim(),
 		billingDay,

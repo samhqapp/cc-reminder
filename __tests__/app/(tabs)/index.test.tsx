@@ -47,18 +47,18 @@ describe("CardsScreen", () => {
 
 		render(<CardsScreen />);
 
+		expect(screen.getByText("Billing Dates")).toBeOnTheScreen();
+		expect(screen.getByText("Next Up")).toBeOnTheScreen();
 		expect(screen.getByText("Netflix Family")).toBeOnTheScreen();
 		expect(screen.getByText("Figma Pro")).toBeOnTheScreen();
 
-		fireEvent.press(screen.getByText("+"));
+		fireEvent.press(screen.getByLabelText("Add renewal"));
 
 		expect(
-			screen.getByText("Quick setup for subscription reminders."),
+			screen.getByText("Quick setup for renewal dates."),
 		).toBeOnTheScreen();
 
 		fireEvent.changeText(screen.getByPlaceholderText("Netflix"), "Spotify");
-		fireEvent.changeText(screen.getByPlaceholderText("Family plan"), "Spotify Premium");
-		fireEvent.changeText(screen.getByPlaceholderText("4242"), "4242");
 		fireEvent.changeText(screen.getByPlaceholderText("25"), "17");
 		fireEvent.press(screen.getByText("Save card"));
 
@@ -66,8 +66,8 @@ describe("CardsScreen", () => {
 			expect(mockCreateCard).toHaveBeenCalledWith(
 				expect.objectContaining({
 					provider: "Spotify",
-					name: "Spotify Premium",
-					last4: "4242",
+					name: "",
+					last4: "",
 					dueDay: "17",
 				}),
 			),
@@ -83,6 +83,7 @@ describe("CardsScreen", () => {
 		});
 
 		render(<CardsScreen />);
+		expect(screen.getByText("Billing Dates")).toBeOnTheScreen();
 		expect(screen.getByText("No cards yet")).toBeOnTheScreen();
 	});
 });

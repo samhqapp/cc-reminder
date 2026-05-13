@@ -6,7 +6,14 @@ import { Button } from "@/components/ui/Button";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { TextField } from "@/components/ui/TextField";
 import Colors from "@/constants/Colors";
-import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
+import {
+	hairline,
+	radius,
+	shadow,
+	spacing,
+	stylepass,
+	type as typeTokens,
+} from "@/constants/Tokens";
 import { providerTemplates } from "@/data/providerTemplates";
 import type { CardDraft } from "@/types/domain";
 
@@ -39,6 +46,7 @@ export function CardForm({
 	const [error, setError] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 	const [showWarning, setShowWarning] = useState(false);
+	const [showAdvanced, setShowAdvanced] = useState(false);
 
 	const template = useMemo(
 		() =>
@@ -82,7 +90,6 @@ export function CardForm({
 			contentContainerStyle={styles.content}
 			showsVerticalScrollIndicator={false}
 		>
-			{/* Header */}
 			<View style={styles.headerSection}>
 				<Text style={[styles.formTitle, { color: palette.text }]}>{title}</Text>
 				<Text style={[styles.formSubtitle, { color: palette.muted }]}>
@@ -90,164 +97,140 @@ export function CardForm({
 				</Text>
 			</View>
 
-			{/* Card identity */}
-			<View
-				style={[
-					styles.section,
-					{ borderColor: palette.border },
-				]}
-			>
+			<View style={[styles.section, { borderColor: palette.border }]}>
 				<TextField
-					label="Card label"
-					value={draft.name}
-					onChangeText={(value) => update({ name: value })}
-					placeholder="Example: Everyday Gold"
-				/>
-				<TextField
-					label="Provider"
+					label="Company or label"
 					value={draft.provider}
 					onChangeText={(value) => update({ provider: value })}
-					placeholder="American Express"
+					placeholder="Example: Netflix"
+					hint="Required unless you add a nickname in Advanced."
 				/>
 				<TextField
-					label="Last 4 digits"
-					value={draft.last4}
+					label="Renewal day"
+					value={draft.dueDay}
 					onChangeText={(value) =>
-						update({ last4: value.replace(/[^0-9]/g, "").slice(0, 4) })
+						update({
+							dueDay: value.replace(/[^0-9]/g, "").slice(0, 2),
+						})
 					}
-					placeholder="0123"
+					placeholder="25"
+					hint="Required, monthly 1-31."
 					keyboardType="number-pad"
 				/>
 			</View>
 
-			{/* Dates */}
-			<View
-				style={[
-					styles.section,
-					{ borderColor: palette.border },
-				]}
+			<PressableScale
+				accessibilityRole="button"
+				onPress={() => setShowAdvanced((current) => !current)}
+				contentStyle={[styles.advancedToggle, { borderColor: palette.border }]}
 			>
-				<Text style={[styles.sectionTitle, { color: palette.text }]}>
-					Dates
+				<Text style={[styles.advancedTitle, { color: palette.text }]}>
+					{showAdvanced ? "Hide advanced" : "Advanced"}
 				</Text>
-				<View style={styles.row}>
-					<View style={styles.field}>
-						<TextField
-							label="Billing day"
-							value={draft.billingDay}
-							onChangeText={(value) =>
-								update({
-									billingDay: value.replace(/[^0-9]/g, "").slice(0, 2),
-								})
-							}
-							placeholder="1-31"
-							hint="Optional"
-							keyboardType="number-pad"
+				<Text style={[styles.advancedMeta, { color: palette.muted }]}>
+					{showAdvanced ? "Collapse optional fields" : "Optional details"}
+				</Text>
+			</PressableScale>
+
+			{showAdvanced ? (
+				<View style={[styles.section, { borderColor: palette.border }]}>
+					<Text style={[styles.sectionTitle, { color: palette.text }]}>
+						Optional details
+					</Text>
+					<TextField
+						label="Card nickname"
+						value={draft.name}
+						onChangeText={(value) => update({ name: value })}
+						placeholder="Example: Everyday Gold"
+						hint="Optional. Uses company or label when blank."
+					/>
+					<TextField
+						label="Last 4 digits"
+						value={draft.last4}
+						onChangeText={(value) =>
+							update({ last4: value.replace(/[^0-9]/g, "").slice(0, 4) })
+						}
+						placeholder="0123"
+						hint="Optional."
+						keyboardType="number-pad"
+					/>
+					<TextField
+						label="Billing day"
+						value={draft.billingDay}
+						onChangeText={(value) =>
+							update({
+								billingDay: value.replace(/[^0-9]/g, "").slice(0, 2),
+							})
+						}
+						placeholder="1-31"
+						hint="Optional."
+						keyboardType="number-pad"
+					/>
+					<TextField
+						label="Tags"
+						value={draft.tags}
+						onChangeText={(value) => update({ tags: value })}
+						placeholder="travel, backup"
+						hint="Optional, comma-separated."
+					/>
+					<TextField
+						label="Note"
+						value={draft.note}
+						onChangeText={(value) => update({ note: value })}
+						placeholder="Cancellation link, phone number, or reminder"
+						multiline
+						minHeight={72}
+					/>
+
+					<Text style={[styles.sectionTitle, { color: palette.text }]}>
+						Preferences
+					</Text>
+					<PressableScale
+						onPress={() =>
+							update({ notificationsEnabled: !draft.notificationsEnabled })
+						}
+						contentStyle={[styles.toggle, { borderColor: palette.border }]}
+					>
+						<Text style={[styles.toggleLabel, { color: palette.text }]}>
+							Notifications
+						</Text>
+						<View
+							style={[
+								styles.toggleDot,
+								{
+									backgroundColor: draft.notificationsEnabled
+										? palette.success
+										: palette.border,
+								},
+							]}
 						/>
-					</View>
-					<View style={styles.field}>
-						<TextField
-							label="Due day"
-							value={draft.dueDay}
-							onChangeText={(value) =>
-								update({
-									dueDay: value.replace(/[^0-9]/g, "").slice(0, 2),
-								})
-							}
-							placeholder="1-31"
-							hint="Required"
-							keyboardType="number-pad"
+					</PressableScale>
+
+					<PressableScale
+						onPress={handleExtendedToggle}
+						contentStyle={[styles.toggle, { borderColor: palette.border }]}
+					>
+						<Text style={[styles.toggleLabel, { color: palette.text }]}>
+							Extended tracking
+						</Text>
+						<View
+							style={[
+								styles.toggleDot,
+								{
+									backgroundColor: draft.extendedTrackingEnabled
+										? palette.success
+										: palette.border,
+								},
+							]}
 						/>
-					</View>
+					</PressableScale>
+					<Text style={[styles.hint, { color: palette.muted }]}>
+						Keep this off unless you want to manage a manual follow-up window.
+					</Text>
 				</View>
-			</View>
+			) : null}
 
-			{/* Tags + note */}
-			<View
-				style={[
-					styles.section,
-					{ borderColor: palette.border },
-				]}
-			>
-				<TextField
-					label="Tags"
-					value={draft.tags}
-					onChangeText={(value) => update({ tags: value })}
-					placeholder="travel, backup, monthly"
-					hint="Comma-separated"
-				/>
-				<TextField
-					label="Note"
-					value={draft.note}
-					onChangeText={(value) => update({ note: value })}
-					placeholder="Cancellation link, phone number, or reminder"
-					multiline
-					minHeight={72}
-				/>
-			</View>
-
-			{/* Preferences */}
-			<View
-				style={[
-					styles.section,
-					{ borderColor: palette.border },
-				]}
-			>
-				<Text style={[styles.sectionTitle, { color: palette.text }]}>
-					Preferences
-				</Text>
-				<PressableScale
-					onPress={() =>
-						update({ notificationsEnabled: !draft.notificationsEnabled })
-					}
-					contentStyle={[
-						styles.toggle,
-						{ borderColor: palette.border },
-					]}
-				>
-					<Text style={[styles.toggleLabel, { color: palette.text }]}>
-						Notifications
-					</Text>
-					<View
-						style={[
-							styles.toggleDot,
-							{
-								backgroundColor: draft.notificationsEnabled
-									? palette.success
-									: palette.border,
-							},
-						]}
-					/>
-				</PressableScale>
-
-				<PressableScale
-					onPress={handleExtendedToggle}
-					contentStyle={[
-						styles.toggle,
-						{ borderColor: palette.border },
-					]}
-				>
-					<Text style={[styles.toggleLabel, { color: palette.text }]}>
-						Extended tracking
-					</Text>
-					<View
-						style={[
-							styles.toggleDot,
-							{
-								backgroundColor: draft.extendedTrackingEnabled
-									? palette.success
-									: palette.border,
-							},
-						]}
-					/>
-				</PressableScale>
-				<Text style={[styles.hint, { color: palette.muted }]}>
-					Keep this off unless you want to manage a manual follow-up window.
-				</Text>
-			</View>
-
-			{/* Extended tracking warning modal (inline) */}
-			{showWarning ? (
+			{showAdvanced && showWarning ? (
 				<View
 					style={[
 						styles.warningSection,
@@ -282,19 +265,12 @@ export function CardForm({
 				</View>
 			) : null}
 
-			{/* Extended tracking fields */}
-			{draft.extendedTrackingEnabled ? (
-				<View
-					style={[
-						styles.section,
-						{ borderColor: palette.border },
-					]}
-				>
+			{showAdvanced && draft.extendedTrackingEnabled ? (
+				<View style={[styles.section, { borderColor: palette.border }]}>
 					<Text style={[styles.sectionTitle, { color: palette.text }]}>
 						Extended tracking
 					</Text>
 
-					{/* Provider template selector */}
 					<Text style={[styles.hint, { color: palette.muted }]}>
 						Provider template (advisory only)
 					</Text>
@@ -407,6 +383,7 @@ const styles = StyleSheet.create({
 	},
 	headerSection: {
 		gap: spacing.xxs,
+		marginBottom: spacing.xs,
 	},
 	formTitle: {
 		...typeTokens.displayMd,
@@ -415,29 +392,43 @@ const styles = StyleSheet.create({
 		...typeTokens.body,
 	},
 	section: {
-		borderBottomWidth: hairline,
-		paddingBottom: spacing.md,
+		...shadow.soft,
+		borderWidth: hairline,
+		borderRadius: radius.xl,
+		backgroundColor: stylepass.panel,
+		padding: spacing.md,
 		gap: spacing.sm,
 	},
 	sectionTitle: {
 		...typeTokens.titleSm,
 	},
-	row: {
-		flexDirection: "row",
-		gap: spacing.sm,
-	},
-	field: {
-		flex: 1,
-	},
 	hint: {
 		...typeTokens.legal,
+	},
+	advancedToggle: {
+		...shadow.soft,
+		minHeight: 50,
+		borderWidth: hairline,
+		borderRadius: radius.lg,
+		backgroundColor: "rgba(255, 255, 255, 0.36)",
+		paddingHorizontal: spacing.md,
+		paddingVertical: spacing.sm,
+		justifyContent: "center",
+	},
+	advancedTitle: {
+		...typeTokens.titleSm,
+	},
+	advancedMeta: {
+		...typeTokens.legal,
+		marginTop: 2,
 	},
 	toggle: {
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
 		borderWidth: hairline,
-		borderRadius: radius.sm,
+		borderRadius: radius.md,
+		backgroundColor: "rgba(255, 255, 255, 0.36)",
 		paddingHorizontal: spacing.md,
 		paddingVertical: 14,
 	},
@@ -450,8 +441,9 @@ const styles = StyleSheet.create({
 		borderRadius: 5,
 	},
 	warningSection: {
+		...shadow.soft,
 		borderWidth: hairline,
-		borderRadius: radius.md,
+		borderRadius: radius.xl,
 		padding: spacing.md,
 		gap: spacing.sm,
 	},
@@ -467,7 +459,8 @@ const styles = StyleSheet.create({
 	},
 	templateChip: {
 		borderWidth: hairline,
-		borderRadius: radius.sm,
+		borderRadius: radius.lg,
+		backgroundColor: "rgba(255, 255, 255, 0.3)",
 		paddingHorizontal: spacing.md,
 		paddingVertical: 12,
 		alignItems: "center",
@@ -477,7 +470,7 @@ const styles = StyleSheet.create({
 	},
 	templateDetail: {
 		borderWidth: hairline,
-		borderRadius: radius.sm,
+		borderRadius: radius.md,
 		padding: spacing.sm,
 		gap: 6,
 	},

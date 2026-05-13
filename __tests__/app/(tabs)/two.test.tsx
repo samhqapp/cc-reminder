@@ -61,6 +61,10 @@ describe("RemindersScreen", () => {
 		render(<RemindersScreen />);
 
 		expect(screen.getByText("Reminders")).toBeOnTheScreen();
+		expect(screen.getByText("Renewal Window")).toBeOnTheScreen();
+		expect(screen.getByText("Due Tonight")).toBeOnTheScreen();
+		fireEvent.press(screen.getByLabelText("Hide reminder summary"));
+		expect(screen.queryByText("Due Tonight")).toBeNull();
 		fireEvent.press(screen.getByText("Seen"));
 		fireEvent.press(screen.getByText("Snooze"));
 		fireEvent.press(screen.getByText("Settled"));
@@ -81,6 +85,7 @@ describe("RemindersScreen", () => {
 		mockGetReminderMetrics.mockReturnValue({ cardCount: 0, activeCount: 0, overdueCount: 0 });
 
 		render(<RemindersScreen />);
+		expect(screen.getByText("Renewal Window")).toBeOnTheScreen();
 		expect(screen.getByText("Nothing due")).toBeOnTheScreen();
 	});
 });

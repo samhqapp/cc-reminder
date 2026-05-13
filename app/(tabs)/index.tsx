@@ -1,84 +1,123 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import {
+	Image,
 	ScrollView,
 	StyleSheet,
 	Text,
 	TextInput,
 	View,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AddCardSheet } from "@/components/card/AddCardSheet";
-import { NoteSheet } from "@/components/card/NoteSheet";
-import { useColorScheme } from "@/components/useColorScheme";
 import { FloatingAddButton } from "@/components/ui/FloatingAddButton";
 import { PressableScale } from "@/components/ui/PressableScale";
-import Colors from "@/constants/Colors";
-import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
-import { findCompanyPreset } from "@/data/companyPresets";
+import {
+	AnimatedAppear,
+	PaperPanel,
+	ScreenScaffold,
+} from "@/components/ui/ScreenScaffold";
+import {
+	hairline,
+	radius,
+	screenWorld,
+	shadow,
+	spacing,
+	stylepass,
+	type as typeTokens,
+} from "@/constants/Tokens";
 import { useCards } from "@/hooks/useCards";
 import type { Card } from "@/types/domain";
-import { formatFullDate, getNextOccurrence, relativeDayLabel } from "@/utils/date";
+import { getNextOccurrence, relativeDayLabel } from "@/utils/date";
+
+const trackerArt = require("../../assets/images/onboarding/track-renewals.png");
+
+type RenewalItem = {
+	card: Card;
+	nextRenewal: Date;
+	dayLabel: string;
+};
 
 export default function CardsScreen() {
-	const colorScheme = useColorScheme() ?? "light";
-	const palette = Colors[colorScheme];
 	const insets = useSafeAreaInsets();
 	const { cards, createCard, defaultDraft, tagPool } = useCards();
 	const [isAddOpen, setIsAddOpen] = useState(false);
-	const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [activeTag, setActiveTag] = useState<string | null>(null);
 
 	const starterDraft = useMemo(() => defaultDraft(), [defaultDraft]);
 
-	const filteredCards = useMemo(() => {
-		let result = cards;
+	const renewalItems = useMemo(
+		() =>
+			cards
+				.map((card) => {
+					const nextRenewal = getNextOccurrence(card.dueDay);
+					return {
+						card,
+						nextRenewal,
+						dayLabel: relativeDayLabel(nextRenewal),
+					};
+				})
+				.sort(
+					(left, right) =>
+						left.nextRenewal.getTime() - right.nextRenewal.getTime(),
+				),
+		[cards],
+	);
+
+	const filteredItems = useMemo(() => {
+		let result = renewalItems;
 		if (activeTag) {
-			result = result.filter((c) => c.tags.includes(activeTag));
+			result = result.filter(({ card }) => card.tags.includes(activeTag));
 		}
+
 		const q = searchQuery.trim().toLowerCase();
 		if (q) {
-			result = result.filter(
-				(c) =>
-					c.name.toLowerCase().includes(q) ||
-					c.last4.includes(q) ||
-					c.provider.toLowerCase().includes(q) ||
-					c.tags.some((t) => t.toLowerCase().includes(q)),
-			);
+			result = result.filter(({ card }) => {
+				return (
+					card.name.toLowerCase().includes(q) ||
+					card.last4.includes(q) ||
+					card.provider.toLowerCase().includes(q) ||
+					card.tags.some((tag) => tag.toLowerCase().includes(q))
+				);
+			});
 		}
-		return result;
-	}, [cards, searchQuery, activeTag]);
 
-	const fabBottom = insets.bottom + 52 + 16;
+		return result;
+	}, [activeTag, renewalItems, searchQuery]);
+
+	const nextUp = filteredItems[0] ?? renewalItems[0] ?? null;
+	const fabBottom = insets.bottom + 92;
 
 	return (
-		<SafeAreaView
-			edges={["top"]}
-			style={[styles.safeArea, { backgroundColor: palette.background }]}
+		<ScreenScaffold
+			world="billing"
+			kicker={monthKicker()}
+			title="Billing Dates"
+			subtitle="A larger, glanceable view of what renews next. Renewal dates only, no spending feed."
+			afterScroll={
+				cards.length > 0 ? (
+					<View style={[styles.fabWrap, { bottom: fabBottom }]}>
+						<FloatingAddButton onPress={() => setIsAddOpen(true)} />
+					</View>
+				) : null
+			}
 		>
-			<ScrollView
-				style={{ backgroundColor: palette.background }}
-				contentContainerStyle={styles.content}
-				showsVerticalScrollIndicator={false}
-			>
-				<Text style={[styles.pageTitle, { color: palette.text }]}>Cards</Text>
+			<MonthRibbon items={renewalItems} />
 
-				{/* Search */}
-				<View
-					style={[
-						styles.searchBar,
-						{ backgroundColor: palette.cardAlt, borderColor: palette.border },
-					]}
-				>
-					<Text style={[styles.searchIcon, { color: palette.muted }]}>
-						&#x2315;
-					</Text>
+			<View style={styles.searchStack}>
+				<View style={styles.searchBar}>
+					<Ionicons
+						name="search-outline"
+						size={19}
+						color="rgba(21, 24, 33, 0.5)"
+					/>
 					<TextInput
-						style={[styles.searchInput, { color: palette.text }]}
-						placeholder="Search name, last 4, provider, tag..."
-						placeholderTextColor={palette.muted}
+						style={styles.searchInput}
+						placeholder="Search provider, ending, tag..."
+						placeholderTextColor="rgba(21, 24, 33, 0.48)"
 						value={searchQuery}
 						onChangeText={setSearchQuery}
 						returnKeyType="search"
@@ -88,12 +127,11 @@ export default function CardsScreen() {
 							onPress={() => setSearchQuery("")}
 							contentStyle={styles.clearBtn}
 						>
-							<Text style={{ color: palette.muted, fontSize: 16 }}>x</Text>
+							<Text style={styles.clearLabel}>Clear</Text>
 						</PressableScale>
 					) : null}
 				</View>
 
-				{/* Tag filter chips */}
 				{tagPool.length > 0 ? (
 					<ScrollView
 						horizontal
@@ -101,154 +139,45 @@ export default function CardsScreen() {
 						contentContainerStyle={styles.tagRow}
 					>
 						{activeTag ? (
-							<PressableScale
-								onPress={() => setActiveTag(null)}
-								contentStyle={[
-									styles.tagChip,
-									{ borderColor: palette.border },
-								]}
-							>
-								<Text style={[styles.tagLabel, { color: palette.muted }]}>
-									All
-								</Text>
-							</PressableScale>
+							<TagChip label="All" active={false} onPress={() => setActiveTag(null)} />
 						) : null}
-						{tagPool.map((tag) => {
-							const active = activeTag === tag;
-							return (
-								<PressableScale
-									key={tag}
-									onPress={() => setActiveTag(active ? null : tag)}
-									contentStyle={[
-										styles.tagChip,
-										{
-											backgroundColor: active ? palette.primary : "transparent",
-											borderColor: active ? palette.primary : palette.border,
-										},
-									]}
-								>
-									<Text
-										style={[
-											styles.tagLabel,
-											{ color: active ? palette.onPrimary : palette.body },
-										]}
-									>
-										{tag}
-									</Text>
-								</PressableScale>
-							);
-						})}
+						{tagPool.map((tag) => (
+							<TagChip
+								key={tag}
+								label={tag}
+								active={activeTag === tag}
+								onPress={() => setActiveTag(activeTag === tag ? null : tag)}
+							/>
+						))}
 					</ScrollView>
 				) : null}
+			</View>
 
-				{filteredCards.length === 0 ? (
-					<View
-						style={[
-							styles.emptyCard,
-							{ backgroundColor: palette.surface, borderColor: palette.border },
-						]}
-					>
-						<Text style={[styles.emptyTitle, { color: palette.text }]}>
+			<AnimatedAppear delay={80}>
+				<NextUpPanel item={nextUp} onAdd={() => setIsAddOpen(true)} />
+			</AnimatedAppear>
+
+			{filteredItems.length === 0 ? (
+				<AnimatedAppear delay={140}>
+					<PaperPanel style={styles.emptyPanel}>
+						<Text style={styles.emptyTitle}>
 							{cards.length === 0 ? "No cards yet" : "No matches"}
 						</Text>
-						<Text style={[styles.emptyBody, { color: palette.muted }]}>
+						<Text style={styles.emptyBody}>
 							{cards.length === 0
-								? "Tap the + button to save your first subscription card."
-								: "Try a different search or clear the filter."}
+								? "Add a card label and renewal day to start the ledger."
+								: "Try another search or clear the selected tag."}
 						</Text>
-					</View>
-				) : null}
+					</PaperPanel>
+				</AnimatedAppear>
+			) : null}
 
-				<View style={styles.list}>
-					{filteredCards.map((card) => {
-						const companyTheme = findCompanyPreset(
-							card.provider,
-							card.companyKey,
-						);
-						const nextRenewal = getNextOccurrence(card.dueDay);
-						const dayLabel = relativeDayLabel(nextRenewal);
-
-						return (
-							<PressableScale
-								key={card.id}
-								onPress={() => router.push(`/card/${card.id}` as never)}
-								contentStyle={[
-									styles.card,
-									{
-										backgroundColor: palette.card,
-										borderColor: palette.border,
-									},
-								]}
-							>
-								<View style={styles.cardHeader}>
-									<View
-										style={[
-											styles.logoBadge,
-											{
-												backgroundColor:
-													companyTheme?.accent ?? palette.primary,
-											},
-										]}
-									>
-										<Text style={styles.logoLabel}>
-											{card.provider.slice(0, 2).toUpperCase()}
-										</Text>
-									</View>
-									<View style={styles.cardTextGroup}>
-										<Text
-											style={[styles.cardTitle, { color: palette.text }]}
-											numberOfLines={1}
-										>
-											{card.name}
-										</Text>
-										<Text style={[styles.cardMeta, { color: palette.muted }]}>
-											{card.provider} · •••• {card.last4}
-										</Text>
-									</View>
-									<View
-										style={[
-											styles.intentDot,
-											{
-												backgroundColor:
-													card.intent === "cancel"
-														? palette.danger
-														: palette.success,
-											},
-										]}
-									/>
-								</View>
-
-								<View style={[styles.cardFooter, { borderTopColor: palette.border }]}>
-									<Text style={[styles.renewalLabel, { color: palette.body }]}>
-										{dayLabel}
-									</Text>
-									<Text style={[styles.renewalDate, { color: palette.muted }]}>
-										{formatFullDate(nextRenewal)}
-									</Text>
-								</View>
-
-								{card.tags.length > 0 ? (
-									<View style={styles.cardTags}>
-										{card.tags.map((tag) => (
-											<View
-												key={tag}
-												style={[styles.cardTagChip, { backgroundColor: palette.surface }]}
-											>
-												<Text style={[styles.cardTagLabel, { color: palette.muted }]}>
-													{tag}
-												</Text>
-											</View>
-										))}
-									</View>
-								) : null}
-							</PressableScale>
-						);
-					})}
-				</View>
-			</ScrollView>
-
-			<View style={[styles.fabWrap, { bottom: fabBottom }]}>
-				<FloatingAddButton onPress={() => setIsAddOpen(true)} />
+			<View style={styles.renewalStack}>
+				{filteredItems.map((item, index) => (
+					<AnimatedAppear key={item.card.id} delay={150 + index * 45}>
+						<RenewalRow item={item} />
+					</AnimatedAppear>
+				))}
 			</View>
 
 			<AddCardSheet
@@ -257,150 +186,450 @@ export default function CardsScreen() {
 				onClose={() => setIsAddOpen(false)}
 				onSubmit={createCard}
 			/>
-			<NoteSheet
-				visible={Boolean(selectedCard)}
-				title={selectedCard?.name ?? "Card note"}
-				subtitle={
-					selectedCard
-						? `${selectedCard.provider} · ${selectedCard.intent === "cancel" ? "Cancel" : "Continue"}`
-						: undefined
-				}
-				note={selectedCard?.note}
-				onClose={() => setSelectedCard(null)}
-			/>
-		</SafeAreaView>
+		</ScreenScaffold>
 	);
 }
 
+function MonthRibbon({ items }: { items: RenewalItem[] }) {
+	const ribbonItems = items.slice(0, 5);
+	const fallback = createFallbackDays(5 - ribbonItems.length);
+
+	return (
+		<View style={styles.monthRibbon}>
+			{ribbonItems.map((item, index) => (
+				<View
+					key={item.card.id}
+					style={[styles.monthDay, index === 0 && styles.monthDayActive]}
+				>
+					<Text
+						style={[
+							styles.monthDayNumber,
+							index === 0 && styles.monthDayNumberActive,
+						]}
+					>
+						{dayNumber(item.nextRenewal)}
+					</Text>
+					<Text
+						style={[
+							styles.monthDayLabel,
+							index === 0 && styles.monthDayLabelActive,
+						]}
+					>
+						{weekday(item.nextRenewal)}
+					</Text>
+				</View>
+			))}
+			{fallback.map((date) => (
+				<View key={date.toISOString()} style={styles.monthDayGhost}>
+					<Text style={styles.monthDayNumber}>{dayNumber(date)}</Text>
+					<Text style={styles.monthDayLabel}>{weekday(date)}</Text>
+				</View>
+			))}
+		</View>
+	);
+}
+
+function NextUpPanel({
+	item,
+	onAdd,
+}: {
+	item: RenewalItem | null;
+	onAdd: () => void;
+}) {
+	const card = item?.card;
+
+	return (
+		<PaperPanel style={styles.nextPanel}>
+			<View style={styles.nextCopy}>
+				<View style={styles.nextLabel}>
+					<View style={styles.nextLabelDot} />
+					<Text style={styles.nextLabelText}>Next Up</Text>
+				</View>
+				<Text style={styles.nextTitle}>
+					{card ? card.name : "Start Your Renewal Ledger"}
+				</Text>
+				<Text style={styles.nextBody}>
+					{card
+						? `${formatCardMeta(card)}. Renewal date saved, no spending data needed.`
+						: "Save the card label, last four digits, and the day you want to remember."}
+				</Text>
+				{!card ? (
+					<PressableScale onPress={onAdd} contentStyle={styles.inlineAdd}>
+						<Text style={styles.inlineAddLabel}>Add First Date</Text>
+					</PressableScale>
+				) : null}
+			</View>
+			<View style={styles.dateStamp}>
+				<Text style={styles.dateStampDay}>
+					{item ? dayNumber(item.nextRenewal) : "--"}
+				</Text>
+				<Text style={styles.dateStampMonth}>
+					{item ? monthShort(item.nextRenewal) : "Date"}
+				</Text>
+			</View>
+			<Image source={trackerArt} style={styles.trackerArt} resizeMode="contain" />
+		</PaperPanel>
+	);
+}
+
+function RenewalRow({ item }: { item: RenewalItem }) {
+	const { card, nextRenewal, dayLabel } = item;
+	const intentLabel = card.intent === "cancel" ? "Cancel" : "Keep";
+
+	return (
+		<PressableScale
+			accessibilityRole="button"
+			onPress={() => router.push(`/card/${card.id}` as never)}
+			contentStyle={styles.renewalRow}
+		>
+			<View style={styles.renewalDate}>
+				<Text style={styles.renewalDateDay}>{dayNumber(nextRenewal)}</Text>
+				<Text style={styles.renewalDateMonth}>{monthShort(nextRenewal)}</Text>
+			</View>
+			<View style={styles.renewalCopy}>
+				<Text style={styles.renewalName} numberOfLines={1}>
+					{card.name}
+				</Text>
+				<Text style={styles.renewalMeta} numberOfLines={1}>
+					{formatCardMeta(card)} - {dayLabel}
+				</Text>
+			</View>
+			<View
+				style={[
+					styles.intentPill,
+					card.intent === "cancel" && styles.intentPillWarn,
+				]}
+			>
+				<Text style={styles.intentLabel}>{intentLabel}</Text>
+			</View>
+		</PressableScale>
+	);
+}
+
+function TagChip({
+	label,
+	active,
+	onPress,
+}: {
+	label: string;
+	active: boolean;
+	onPress: () => void;
+}) {
+	return (
+		<PressableScale
+			onPress={onPress}
+			contentStyle={[styles.tagChip, active && styles.tagChipActive]}
+		>
+			<Text style={[styles.tagLabel, active && styles.tagLabelActive]}>
+				{label}
+			</Text>
+		</PressableScale>
+	);
+}
+
+function monthKicker() {
+	return new Intl.DateTimeFormat(undefined, {
+		month: "long",
+	}).format(new Date()) + " Ledger";
+}
+
+function dayNumber(date: Date) {
+	return new Intl.DateTimeFormat(undefined, { day: "2-digit" }).format(date);
+}
+
+function monthShort(date: Date) {
+	return new Intl.DateTimeFormat(undefined, { month: "short" }).format(date);
+}
+
+function weekday(date: Date) {
+	return new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(date);
+}
+
+function formatCardMeta(card: Card) {
+	return card.last4 ? `${card.provider} ending ${card.last4}` : card.provider;
+}
+
+function createFallbackDays(count: number) {
+	const today = new Date();
+	return Array.from({ length: Math.max(0, count) }, (_, index) => {
+		const date = new Date(today);
+		date.setDate(today.getDate() + index * 4);
+		return date;
+	});
+}
+
 const styles = StyleSheet.create({
-	safeArea: {
+	monthRibbon: {
+		flexDirection: "row",
+		gap: 7,
+		marginBottom: spacing.md,
+	},
+	monthDay: {
+		...shadow.soft,
 		flex: 1,
+		minHeight: 58,
+		borderRadius: 14,
+		paddingVertical: 9,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: "rgba(255, 255, 255, 0.36)",
+		borderWidth: hairline,
+		borderColor: "rgba(21, 24, 33, 0.1)",
 	},
-	content: {
-		padding: spacing.lg,
-		paddingBottom: 120,
-		gap: spacing.md,
+	monthDayGhost: {
+		flex: 1,
+		minHeight: 58,
+		borderRadius: 14,
+		paddingVertical: 9,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: "rgba(255, 255, 255, 0.2)",
+		borderWidth: hairline,
+		borderColor: "rgba(21, 24, 33, 0.08)",
+		opacity: 0.68,
 	},
-	pageTitle: {
-		...typeTokens.displayLg,
-		marginBottom: spacing.xs,
+	monthDayActive: {
+		backgroundColor: "rgba(21, 24, 33, 0.88)",
+		transform: [{ translateY: -3 }],
+	},
+	monthDayNumber: {
+		...typeTokens.titleSm,
+		color: "rgba(21, 24, 33, 0.58)",
+	},
+	monthDayNumberActive: {
+		color: stylepass.cream,
+	},
+	monthDayLabel: {
+		...typeTokens.legal,
+		marginTop: 4,
+		color: "rgba(21, 24, 33, 0.58)",
+		textTransform: "uppercase",
+		letterSpacing: 0.8,
+	},
+	monthDayLabelActive: {
+		color: "rgba(255, 247, 233, 0.76)",
+	},
+	nextPanel: {
+		minHeight: 214,
+		padding: 17,
+		overflow: "hidden",
+		marginBottom: spacing.md,
+	},
+	nextCopy: {
+		maxWidth: 190,
+		zIndex: 2,
+	},
+	nextLabel: {
+		alignSelf: "flex-start",
+		minHeight: 28,
+		borderRadius: radius.lg,
+		paddingHorizontal: 12,
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 7,
+		backgroundColor: screenWorld.billing.accentSoft,
+	},
+	nextLabelDot: {
+		width: 7,
+		height: 7,
+		borderRadius: 4,
+		backgroundColor: screenWorld.billing.accent,
+	},
+	nextLabelText: {
+		...typeTokens.legal,
+		color: "rgba(21, 24, 33, 0.68)",
+		textTransform: "uppercase",
+		letterSpacing: 0.7,
+	},
+	nextTitle: {
+		...typeTokens.displayMd,
+		marginTop: spacing.md,
+		color: stylepass.ink,
+	},
+	nextBody: {
+		...typeTokens.legal,
+		marginTop: spacing.xs,
+		color: "rgba(21, 24, 33, 0.63)",
+	},
+	dateStamp: {
+		position: "absolute",
+		zIndex: 3,
+		right: 16,
+		top: 28,
+		width: 74,
+		height: 76,
+		borderRadius: radius.lg,
+		alignItems: "center",
+		justifyContent: "center",
+		paddingTop: 2,
+		backgroundColor: "rgba(21, 24, 33, 0.9)",
+		...shadow.soft,
+	},
+	dateStampDay: {
+		fontFamily: typeTokens.displayMd.fontFamily,
+		fontSize: 34,
+		lineHeight: 40,
+		color: stylepass.cream,
+	},
+	dateStampMonth: {
+		...typeTokens.legal,
+		marginTop: 4,
+		color: "rgba(255, 247, 233, 0.74)",
+		textTransform: "uppercase",
+		letterSpacing: 1,
+	},
+	trackerArt: {
+		position: "absolute",
+		right: -116,
+		bottom: -318,
+		width: 250,
+		height: 410,
+		opacity: 0.9,
+	},
+	inlineAdd: {
+		alignSelf: "flex-start",
+		marginTop: spacing.md,
+		minHeight: 38,
+		paddingHorizontal: spacing.md,
+		borderRadius: radius.lg,
+		justifyContent: "center",
+		backgroundColor: "rgba(92, 76, 115, 0.9)",
+	},
+	inlineAddLabel: {
+		...typeTokens.caption,
+		color: stylepass.cream,
+	},
+	searchStack: {
+		gap: spacing.sm,
+		marginBottom: spacing.md,
 	},
 	searchBar: {
 		flexDirection: "row",
 		alignItems: "center",
-		borderWidth: hairline,
-		borderRadius: radius.sm,
-		paddingHorizontal: spacing.sm,
-		height: 44,
+		minHeight: 48,
+		borderRadius: radius.lg,
+		paddingHorizontal: spacing.md,
 		gap: spacing.xs,
-	},
-	searchIcon: {
-		fontSize: 18,
+		backgroundColor: "rgba(255, 255, 255, 0.38)",
+		borderWidth: hairline,
+		borderColor: "rgba(21, 24, 33, 0.1)",
 	},
 	searchInput: {
 		flex: 1,
 		...typeTokens.body,
+		color: stylepass.ink,
 		paddingVertical: 0,
 	},
 	clearBtn: {
-		padding: 4,
+		paddingHorizontal: 8,
+		paddingVertical: 5,
+	},
+	clearLabel: {
+		...typeTokens.legal,
+		color: stylepass.plum,
 	},
 	tagRow: {
-		flexDirection: "row",
 		gap: spacing.xs,
 		paddingVertical: 2,
 	},
 	tagChip: {
 		borderWidth: hairline,
-		borderRadius: radius.pill,
-		paddingHorizontal: spacing.sm,
-		paddingVertical: 6,
+		borderColor: "rgba(21, 24, 33, 0.12)",
+		borderRadius: radius.lg,
+		paddingHorizontal: 14,
+		paddingVertical: 8,
+		backgroundColor: "rgba(255, 255, 255, 0.32)",
+	},
+	tagChipActive: {
+		backgroundColor: "rgba(21, 24, 33, 0.86)",
+		borderColor: "rgba(21, 24, 33, 0.86)",
 	},
 	tagLabel: {
-		...typeTokens.caption,
+		...typeTokens.legal,
+		color: "rgba(21, 24, 33, 0.68)",
 	},
-	emptyCard: {
-		borderWidth: hairline,
-		borderRadius: radius.lg,
+	tagLabelActive: {
+		color: stylepass.cream,
+	},
+	emptyPanel: {
 		padding: spacing.lg,
 		gap: spacing.xs,
+		marginBottom: spacing.md,
 	},
 	emptyTitle: {
-		...typeTokens.titleMd,
+		...typeTokens.titleLg,
+		color: stylepass.ink,
 	},
 	emptyBody: {
 		...typeTokens.body,
+		color: stylepass.body,
 	},
-	list: {
-		gap: spacing.sm,
+	renewalStack: {
+		gap: 9,
 	},
-	card: {
+	renewalRow: {
+		...shadow.soft,
+		minHeight: 68,
+		borderRadius: radius.xl,
 		borderWidth: hairline,
-		borderRadius: radius.lg,
-		padding: spacing.md,
-		gap: spacing.sm,
-	},
-	cardHeader: {
+		borderColor: "rgba(21, 24, 33, 0.1)",
+		backgroundColor: "rgba(255, 255, 255, 0.42)",
+		padding: 10,
 		flexDirection: "row",
 		alignItems: "center",
-		gap: spacing.sm,
-	},
-	logoBadge: {
-		width: 40,
-		height: 40,
-		borderRadius: radius.md,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	logoLabel: {
-		color: "#ffffff",
-		fontSize: 13,
-		fontWeight: "500",
-		letterSpacing: 0.5,
-	},
-	cardTextGroup: {
-		flex: 1,
-	},
-	cardTitle: {
-		...typeTokens.titleSm,
-		marginBottom: 1,
-	},
-	cardMeta: {
-		...typeTokens.legal,
-	},
-	intentDot: {
-		width: 8,
-		height: 8,
-		borderRadius: 4,
-	},
-	cardFooter: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		borderTopWidth: hairline,
-		paddingTop: spacing.xs,
-	},
-	renewalLabel: {
-		...typeTokens.caption,
+		gap: 10,
 	},
 	renewalDate: {
+		width: 48,
+		height: 48,
+		borderRadius: 13,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: screenWorld.billing.accentSoft,
+	},
+	renewalDateDay: {
+		...typeTokens.titleSm,
+		color: "rgba(21, 24, 33, 0.75)",
+	},
+	renewalDateMonth: {
 		...typeTokens.legal,
+		marginTop: 2,
+		color: "rgba(21, 24, 33, 0.58)",
+		textTransform: "uppercase",
+		letterSpacing: 0.7,
 	},
-	cardTags: {
-		flexDirection: "row",
-		flexWrap: "wrap",
-		gap: 6,
+	renewalCopy: {
+		flex: 1,
+		minWidth: 0,
 	},
-	cardTagChip: {
-		borderRadius: radius.xs,
-		paddingHorizontal: 8,
-		paddingVertical: 3,
+	renewalName: {
+		...typeTokens.titleSm,
+		color: stylepass.ink,
 	},
-	cardTagLabel: {
+	renewalMeta: {
 		...typeTokens.legal,
+		marginTop: 4,
+		color: "rgba(21, 24, 33, 0.56)",
+	},
+	intentPill: {
+		minWidth: 58,
+		minHeight: 28,
+		borderRadius: radius.lg,
+		alignItems: "center",
+		justifyContent: "center",
+		paddingHorizontal: 12,
+		backgroundColor: "rgba(55, 93, 72, 0.9)",
+	},
+	intentPillWarn: {
+		backgroundColor: "rgba(140, 75, 53, 0.9)",
+	},
+	intentLabel: {
+		...typeTokens.legal,
+		color: stylepass.cream,
 	},
 	fabWrap: {
 		position: "absolute",
 		right: spacing.lg,
+		zIndex: 30,
 	},
 });

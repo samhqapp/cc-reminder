@@ -12,7 +12,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { hairline, radius, spacing, type as typeTokens } from "@/constants/Tokens";
+import {
+	hairline,
+	radius,
+	shadow,
+	spacing,
+	stylepass,
+	type as typeTokens,
+} from "@/constants/Tokens";
 
 type Props = PropsWithChildren<{
 	visible: boolean;
@@ -53,7 +60,7 @@ export function BottomSheet({
 						style={[
 							styles.sheet,
 							{
-								backgroundColor: palette.card,
+								backgroundColor: stylepass.cream,
 								borderColor: palette.border,
 							},
 						]}
@@ -95,8 +102,9 @@ const styles = StyleSheet.create({
 		justifyContent: "flex-end",
 	},
 	sheet: {
-		borderTopLeftRadius: radius.xl,
-		borderTopRightRadius: radius.xl,
+		...shadow.panel,
+		borderTopLeftRadius: radius.rail,
+		borderTopRightRadius: radius.rail,
 		borderWidth: hairline,
 		borderBottomWidth: 0,
 		paddingHorizontal: spacing.lg,
