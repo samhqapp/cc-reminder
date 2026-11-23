@@ -30,7 +30,15 @@ CC Reminder is a local-first credit card due-date reminder app. It helps you rem
 
 ## Sharing And Sale
 
-CC Reminder does not intentionally share or sell user data. The current source does not include a backend, cloud sync, account system, advertising SDK, analytics SDK, or payment processor integration.
+CC Reminder does not share or sell user data. It has no cloud sync, account system, advertising SDK, analytics SDK, or payment processor integration.
+
+## Crash Reports
+
+If CC Reminder quits unexpectedly, it asks on the next launch whether to send a crash report. Nothing is sent unless you tap Send. The report holds the error, the app version, and the platform version, never your cards or notes.
+
+## Daily Counts
+
+Settings has a switch "Share anonymous daily counts", off by default. When you turn it on, the app sends one count a day with the app version, platform, and platform version. It holds no cards, notes, or account. A random install id limits counts to one a day; the server keeps it in memory only and stores daily totals.
 
 ## Notifications
 

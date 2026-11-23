@@ -4,6 +4,7 @@ export const storageKeys = {
 	onboardingComplete: "cc-reminder:onboarding-complete",
 	quickNotes: "cc-reminder:quick-notes",
 	cards: "cc-reminder:cards",
+	indieCrumb: "cc-reminder:indiecrumb",
 } as const;
 
 export async function loadJson<T>(key: string, fallback: T): Promise<T> {

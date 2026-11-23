@@ -24,6 +24,7 @@ import Colors from "@/constants/Colors";
 import { font } from "@/constants/Tokens";
 import { CardsProvider } from "@/hooks/useCards";
 import { OnboardingProvider, useOnboarding } from "@/hooks/useOnboarding";
+import { catchCrashes, offerCrashReport, pingDaily } from "@/utils/indiecrumb";
 
 export {
 	ErrorBoundary,
@@ -79,6 +80,13 @@ function RootLayoutContent({
 	useEffect(() => {
 		if (loaded && isReady) {
 			SplashScreen.hideAsync();
+		}
+	}, [isReady, loaded]);
+
+	useEffect(() => {
+		if (loaded && isReady && Platform.OS !== "web") {
+			catchCrashes();
+			void offerCrashReport().then(() => pingDaily());
 		}
 	}, [isReady, loaded]);
 

@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { PressableScale } from "@/components/ui/PressableScale";
@@ -18,9 +19,20 @@ import {
 	type as typeTokens,
 } from "@/constants/Tokens";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { countsEnabled, setCountsEnabled } from "@/utils/indiecrumb";
 
 export default function SettingsScreen() {
 	const { resetOnboarding } = useOnboarding();
+	const [shareCounts, setShareCounts] = useState(false);
+
+	useEffect(() => {
+		void countsEnabled().then(setShareCounts);
+	}, []);
+
+	function toggleShareCounts() {
+		setShareCounts(!shareCounts);
+		void setCountsEnabled(!shareCounts);
+	}
 
 	async function showOnboarding() {
 		await resetOnboarding();
@@ -76,6 +88,15 @@ export default function SettingsScreen() {
 						icon="notifications-outline"
 					/>
 				</AnimatedAppear>
+				<AnimatedAppear delay={275}>
+					<SettingRow
+						title="Share anonymous daily counts"
+						body="One count a day: app version and OS. No cards or notes."
+						icon="stats-chart-outline"
+						active={shareCounts}
+						onPress={toggleShareCounts}
+					/>
+				</AnimatedAppear>
 			</View>
 		</ScreenScaffold>
 	);
@@ -86,13 +107,15 @@ function SettingRow({
 	body,
 	icon,
 	active,
+	onPress,
 }: {
 	title: string;
 	body: string;
 	icon: keyof typeof Ionicons.glyphMap;
 	active?: boolean;
+	onPress?: () => void;
 }) {
-	return (
+	const row = (
 		<PaperPanel style={styles.settingRow}>
 			<View style={styles.settingIcon}>
 				<Ionicons name={icon} size={20} color={stylepass.ink} />
@@ -105,6 +128,18 @@ function SettingRow({
 				<View style={[styles.toggleThumb, active && styles.toggleThumbActive]} />
 			</View>
 		</PaperPanel>
+	);
+	return onPress ? (
+		<PressableScale
+			accessibilityRole="switch"
+			accessibilityLabel={title}
+			accessibilityState={{ checked: !!active }}
+			onPress={onPress}
+		>
+			{row}
+		</PressableScale>
+	) : (
+		row
 	);
 }
 
