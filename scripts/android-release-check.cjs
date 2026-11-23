@@ -3,7 +3,8 @@ const path = require("path");
 
 const EXPECTED_VERSION = "1.0.4";
 const EXPECTED_PACKAGE = "com.surajmandal.ccreminder";
-const EXPECTED_VERSION_CODE = 5;
+const [major, minor, patch] = EXPECTED_VERSION.split(".").map(Number);
+const EXPECTED_VERSION_CODE = major * 10000 + minor * 100 + patch;
 
 const requiredFiles = [
 	"docs/android-play-release.md",
@@ -17,7 +18,7 @@ const requiredFiles = [
 	"fastlane/metadata/android/en-US/images/icon.png",
 	"fastlane/metadata/android/en-US/short_description.txt",
 	"fastlane/metadata/android/en-US/title.txt",
-	"fastlane/metadata/android/en-US/changelogs/5.txt",
+	`fastlane/metadata/android/en-US/changelogs/${EXPECTED_VERSION_CODE}.txt`,
 	"store-assets/android/en-US/icon.png",
 	"store-assets/android/en-US/feature-graphic/cc-reminder-feature-graphic.png",
 	"store-assets/android/en-US/feature-graphic/.gitkeep",
@@ -84,7 +85,7 @@ function loadReleaseState(repoRoot) {
 		).trim(),
 		releaseNotes: readText(
 			repoRoot,
-			"fastlane/metadata/android/en-US/changelogs/5.txt",
+			`fastlane/metadata/android/en-US/changelogs/${EXPECTED_VERSION_CODE}.txt`,
 		).trim(),
 	};
 }
@@ -120,8 +121,8 @@ function validateReleaseState(state) {
 		issues.push(`Android package must be ${EXPECTED_PACKAGE}.`);
 	}
 
-	if (android.versionCode !== EXPECTED_VERSION_CODE) {
-		issues.push(`Android versionCode must be ${EXPECTED_VERSION_CODE}.`);
+	if (android.versionCode !== undefined) {
+		issues.push("app.json must not set android.versionCode; app.config.js derives it.");
 	}
 
 	if (state.easJson.cli?.appVersionSource !== "local") {
@@ -233,7 +234,7 @@ function printSummary(state) {
 	const rows = [
 		["Package", state.appJson.expo.android.package],
 		["Version", state.appJson.expo.version],
-		["Version code", String(state.appJson.expo.android.versionCode)],
+		["Version code", String(EXPECTED_VERSION_CODE)],
 		["EAS build profile", "play-internal"],
 		["Submit track", state.easJson.submit["play-internal"].android.track],
 		["Submit status", state.easJson.submit["play-internal"].android.releaseStatus],

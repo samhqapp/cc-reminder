@@ -10,10 +10,10 @@ This repo uses the Expo managed release path for Android. The generated `android
 | Expo owner | `surajmanalcell` |
 | Android package | `com.surajmandal.ccreminder` |
 | App version | `1.0.4` |
-| Android versionCode | `5` |
+| Android versionCode | `10004` (derived from the version in `app.config.js`) |
 | Play track | Internal testing and Closed testing - Alpha |
 | Release status | Preparing superseding test release |
-| Latest Play release target | `1.0.4`, Android versionCode `5`, to supersede Internal testing `1.0.3` / `4` and Closed testing - Alpha `1.0.1` / `2` |
+| Latest Play release target | `1.0.4`, Android versionCode `10004`, to supersede Internal testing `1.0.3` / `4` and Closed testing - Alpha `1.0.1` / `2` |
 | Pricing | Paid. Base price set from USD 5.00; United States row shows USD 4.99 after Play tier rounding. |
 | Category | Finance |
 | Ads | No |
@@ -44,7 +44,7 @@ The Makefile exports these paths automatically.
 | `npm install` | Install dependencies. The Makefile uses `NPM_CONFIG_CACHE` for the external npm cache. |
 | `make android-check` | Run typecheck, tests, and release configuration validation. |
 | `make play-metadata` | Validate Play metadata and staging folders. |
-| `make android-aab` | Fallback only: build a signed AAB from the generated ignored Android project and copy it to `.release/cc-reminder-android-1.0.4-5.aab`. |
+| `make android-aab` | Fallback only: build a signed AAB from the generated ignored Android project and copy it to `.release/cc-reminder-android-1.0.4-10004.aab`. |
 | `CONFIRM_EAS_BUILD=yes make eas-android-build` | Create a local EAS Android App Bundle at `.release/cc-reminder-android.aab`. |
 | `CONFIRM_PLAY_UPLOAD=yes make play-internal` | Submit `.release/cc-reminder-android.aab` to Play internal testing. Do not run until the Play Console and service account steps are confirmed. |
 
@@ -71,7 +71,7 @@ Do not grant API permissions, download a service account JSON key, upload a buil
 | Package `com.surajmandal.ccreminder` created or selected | Verified in Play Console |
 | Internal testing release | Published version `1.0.3` with Android versionCode `4`; Play shows "Available to internal testers", released on May 9, 2026 at 1:01 PM, not reviewed |
 | Closed testing - Alpha release | Published version `1.0.1` with Android versionCode `2`; Play shows "Available to testers on Google Play", released on May 10, 2026 at 3:22 AM |
-| Superseding release plan | Publish Android versionCode `5` / version `1.0.4` to both Internal testing and Closed testing - Alpha so both tester groups see the same newest build |
+| Superseding release plan | Publish Android versionCode `10004` / version `1.0.4` to both Internal testing and Closed testing - Alpha so both tester groups see the same newest build |
 | Internal tester list | `cc-reminder-internal`, 1 user |
 | Tester join link | `https://play.google.com/apps/internaltest/4700998914485383299` |
 | AAB uploaded | Uploaded `.release/cc-reminder-android.aab` through Play Console after EAS Submit was blocked by the missing service account JSON |
