@@ -1,0 +1,5 @@
+Version 1.0.4 testing update:
+
+Publish a superseding Android App Bundle for both Internal testing and Closed testing - Alpha.
+Bring both tester tracks onto the same version code after Internal testing moved ahead of Closed testing.
+Keep the refreshed CC Reminder icon, Play listing assets, and local-first reminder experience in one aligned build.

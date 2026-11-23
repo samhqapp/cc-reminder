@@ -50,3 +50,4 @@ play-service-account*.json
 
 # temp
 tmp/
+./tmp/

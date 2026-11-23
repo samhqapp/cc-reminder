@@ -1,9 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 
-const EXPECTED_VERSION = "1.0.2";
+const EXPECTED_VERSION = "1.0.4";
 const EXPECTED_PACKAGE = "com.surajmandal.ccreminder";
-const EXPECTED_VERSION_CODE = 3;
+const EXPECTED_VERSION_CODE = 5;
 
 const requiredFiles = [
 	"docs/android-play-release.md",
@@ -13,9 +13,13 @@ const requiredFiles = [
 	"docs/release/android-key.properties.example",
 	"docs/release/eas-credentials.example.json",
 	"fastlane/metadata/android/en-US/full_description.txt",
+	"fastlane/metadata/android/en-US/images/featureGraphic.png",
+	"fastlane/metadata/android/en-US/images/icon.png",
 	"fastlane/metadata/android/en-US/short_description.txt",
 	"fastlane/metadata/android/en-US/title.txt",
-	"fastlane/metadata/android/en-US/changelogs/3.txt",
+	"fastlane/metadata/android/en-US/changelogs/5.txt",
+	"store-assets/android/en-US/icon.png",
+	"store-assets/android/en-US/feature-graphic/cc-reminder-feature-graphic.png",
 	"store-assets/android/en-US/feature-graphic/.gitkeep",
 	"store-assets/android/en-US/phone-screenshots/.gitkeep",
 	"store-assets/android/en-US/tablet-screenshots/.gitkeep",
@@ -46,6 +50,22 @@ function exists(repoRoot, relativePath) {
 	return fs.existsSync(path.join(repoRoot, relativePath));
 }
 
+function readPngDimensions(repoRoot, relativePath) {
+	const fullPath = path.join(repoRoot, relativePath);
+	const buffer = fs.readFileSync(fullPath);
+	const pngSignature = "89504e470d0a1a0a";
+
+	if (buffer.subarray(0, 8).toString("hex") !== pngSignature) {
+		throw new Error(`${relativePath} is not a PNG file.`);
+	}
+
+	return {
+		width: buffer.readUInt32BE(16),
+		height: buffer.readUInt32BE(20),
+		colorType: buffer.readUInt8(25),
+	};
+}
+
 function loadReleaseState(repoRoot) {
 	return {
 		repoRoot,
@@ -64,7 +84,7 @@ function loadReleaseState(repoRoot) {
 		).trim(),
 		releaseNotes: readText(
 			repoRoot,
-			"fastlane/metadata/android/en-US/changelogs/3.txt",
+			"fastlane/metadata/android/en-US/changelogs/5.txt",
 		).trim(),
 	};
 }
@@ -135,10 +155,7 @@ function validateReleaseState(state) {
 		issues.push("Play title must be CC Reminder.");
 	}
 
-	if (
-		state.shortDescription !==
-		"Local-first credit card due-date reminders."
-	) {
+	if (state.shortDescription !== "Private credit card due date reminders.") {
 		issues.push("Play short description does not match the release copy.");
 	}
 
@@ -161,12 +178,13 @@ function validateReleaseState(state) {
 
 	if (
 		!includesAll(state.releaseNotes, [
-			"Version 1.0.2",
-			"internal testing",
+			"Version 1.0.4",
+			"testing",
 			"Android App Bundle",
+			"icon",
 		])
 	) {
-		issues.push("Internal testing release notes are incomplete.");
+		issues.push("Testing release notes are incomplete.");
 	}
 
 	for (const relativePath of requiredFiles) {
@@ -178,6 +196,33 @@ function validateReleaseState(state) {
 	for (const pattern of requiredIgnorePatterns) {
 		if (!state.gitignore.includes(pattern)) {
 			issues.push(`.gitignore must include ${pattern}.`);
+		}
+	}
+
+	const imageRequirements = [
+		["store-assets/android/en-US/icon.png", 512, 512],
+		["fastlane/metadata/android/en-US/images/icon.png", 512, 512],
+		[
+			"store-assets/android/en-US/feature-graphic/cc-reminder-feature-graphic.png",
+			1024,
+			500,
+		],
+		["fastlane/metadata/android/en-US/images/featureGraphic.png", 1024, 500],
+	];
+
+	for (const [relativePath, expectedWidth, expectedHeight] of imageRequirements) {
+		if (!exists(state.repoRoot, relativePath)) {
+			continue;
+		}
+
+		const dimensions = readPngDimensions(state.repoRoot, relativePath);
+		if (
+			dimensions.width !== expectedWidth ||
+			dimensions.height !== expectedHeight
+		) {
+			issues.push(
+				`${relativePath} must be ${expectedWidth}x${expectedHeight}; found ${dimensions.width}x${dimensions.height}.`,
+			);
 		}
 	}
 
@@ -223,5 +268,6 @@ if (require.main === module) {
 
 module.exports = {
 	loadReleaseState,
+	readPngDimensions,
 	validateReleaseState,
 };

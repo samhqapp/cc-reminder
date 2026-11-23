@@ -3,7 +3,7 @@
     "name": "CC Reminder",
     "owner": "surajmanalcell",
     "slug": "cc-reminder",
-    "version": "1.0.2",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "ccreminder",
@@ -12,7 +12,7 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#181d26"
+      "backgroundColor": "#fdfdfd"
     },
     "ios": {
       "supportsTablet": true,
@@ -20,10 +20,11 @@
     },
     "android": {
       "package": "com.surajmandal.ccreminder",
-      "versionCode": 3,
+      "versionCode": 5,
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#181d26"
+        "backgroundColor": "#aae9e7"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false

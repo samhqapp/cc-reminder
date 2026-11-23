@@ -9,7 +9,7 @@ EAS_LOCAL_BUILD_WORKINGDIR ?= $(EXTERNAL_CACHE_ROOT)/EAS/cc-reminder-local-build
 NPM_CONFIG_CACHE ?= $(EXTERNAL_CACHE_ROOT)/npm-cache
 BUNDLE_PATH ?= $(EXTERNAL_CACHE_ROOT)/Ruby/bundle/cc-reminder
 EAS_ANDROID_AAB ?= .release/cc-reminder-android.aab
-LOCAL_ANDROID_AAB ?= .release/cc-reminder-android-1.0.2-3.aab
+LOCAL_ANDROID_AAB ?= .release/cc-reminder-android-1.0.4-5.aab
 
 export ANDROID_HOME
 export ANDROID_SDK_ROOT

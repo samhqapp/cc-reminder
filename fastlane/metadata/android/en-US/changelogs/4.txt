@@ -1,0 +1,4 @@
+Version 1.0.3 internal testing update:
+
+Refresh the launcher icon, adaptive icon foreground, splash icon, favicon, and Play listing icon from the cleaned CC Reminder asset.
+Publish the corrected icon asset set through Android App Bundle version code 4.
